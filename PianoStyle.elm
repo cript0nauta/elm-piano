@@ -1,5 +1,8 @@
 module PianoStyle exposing (..)
 
+-- Based on javascript-piano by michaelemp
+-- https://github.com/michaelmp/js-piano
+
 css =
     """
     .piano {
@@ -69,4 +72,12 @@ css =
     .piano-black-raised.pressed{
         background-color: #55AA55;
     }
-            """
+
+    .piano-white.pressed {
+        background-color: #88FFAA;
+    }
+
+    .piano-black-raised.pressed{
+        background-color: #55AA55;
+    }
+"""

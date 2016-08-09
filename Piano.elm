@@ -19,7 +19,7 @@ main =
 -- MODEL
 type alias Model = 
     { notes: Set.Set Note
-    , notesRange: (Int, Int)
+    , noteRange: (Int, Int)
     }
 
 type alias Note = Int
@@ -32,13 +32,17 @@ initialModel = Model Set.empty (36, 60)
 -- UPDATE
 
 type Msg
-    = A
+    = KeyUp Note
+    | KeyDown Note
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        A ->
-            model
+        KeyUp note ->
+            { model | notes = Set.remove note model.notes }
+
+        KeyDown note ->
+            { model | notes = Set.insert note model.notes }
 
 
 -- VIEW
@@ -51,18 +55,38 @@ view model =
                      [div [class "piano-keys"] inner]
                 ]
         myStyle = node "style" [] [text PianoStyle.css]
+
+        range = [fst model.noteRange .. snd model.noteRange]
     in
         span [] [myStyle
-                , container <| List.map viewKey
-                    [fst model.notesRange .. snd model.notesRange]
+                , container <| List.map2 viewKey
+                    range
+                    (List.map (flip Set.member model.notes) range)
                 ]
 
-viewKey : Note -> Html Msg
-viewKey note =
+viewKey : Note -> Bool -> Html Msg
+viewKey note active =
     if isNatural note then
-        div [class "piano-white"] []
+        div
+            [ classList [
+                ("piano-white", True),
+                ("pressed", active)
+              ]
+              , onMouseDown (KeyDown note)
+              , onMouseUp (KeyUp note)
+            ] 
+            []
     else
-        div [class "piano-black"] [ div [class "piano-black-raised" ] [] ]
+        div 
+            [class "piano-black"] 
+            [ div [ 
+                classList [
+                    ("piano-black-raised", True),
+                    ("pressed", active)
+                ],
+                onMouseDown (KeyDown note),
+                onMouseUp (KeyUp note)
+              ] [] ]
 
 
 -- Note helpers
