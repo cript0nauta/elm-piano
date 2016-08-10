@@ -1,22 +1,58 @@
-module Piano exposing (..)
+module Piano exposing (
+    Model, Msg, Note, initialModel, isNatural, keyboard12Keys,
+    keyboard25Keys, keyboard49Keys, keyboard61Keys, keyboard76Keys,
+    keyboard88Keys, noteName, octave, update, view)
+
+{-| 
+
+# Model
+@docs Model
+@docs initialModel
+@docs Note
+
+# Messages and updates
+@docs update
+@docs Msg
+
+# Keyboard size helpers
+@docs keyboard12Keys
+@docs keyboard25Keys
+@docs keyboard49Keys
+@docs keyboard61Keys
+@docs keyboard76Keys
+@docs keyboard88Keys
+
+# HTML rendering
+@docs view
+
+# Note helpers
+@docs noteName
+@docs isNatural
+@docs octave
+
+-}
+
 import Html exposing (..)
-import Html.App as App
+-- import Html.App as App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Set
 import String
-import PianoStyle
+import Piano.PianoStyle exposing (css)
 
 
-main =
-    App.beginnerProgram
-        { model = initialModel
-        , update = update
-        , view = view
-        }
+-- main =
+--     App.beginnerProgram
+--         { model = initialModel
+--         , update = update
+--         , view = view
+--         }
 
 
 -- MODEL
+
+{-| The model of the widget
+-}
 type alias Model = 
     { notes: Set.Set Note
     , noteRange: (Int, Int)
@@ -25,10 +61,15 @@ type alias Model =
     , debugNotes: Bool
     }
 
+{-| Represents a note giving its MIDI Note Number
+
+See http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note_numbers_for_octaves.htm for more information
+-}
 type alias Note = Int
 
+{-| Common initial configuration for the widget
+-}
 initialModel : Model
--- One octave keyboard, starting from C4
 initialModel =
     { notes = Set.empty
     , noteRange = keyboard25Keys
@@ -37,20 +78,49 @@ initialModel =
     , debugNotes = True
     }
 
+{-| Note range of a 12-key keyboard
+-}
+keyboard12Keys : (Int, Int)
 keyboard12Keys = (48, 59)
+
+{-| Note range of a 25-key keyboard
+-}
+keyboard25Keys : (Int, Int)
 keyboard25Keys = (36, 60)
+
+{-| Note range of a 49-key keyboard
+-}
+keyboard49Keys : (Int, Int)
 keyboard49Keys = (24, 72)
+
+{-| Note range of a 61-key keyboard
+-}
+keyboard61Keys : (Int, Int)
 keyboard61Keys = (24, 84)
+
+{-| Note range of a 76-key keyboard
+-}
+keyboard76Keys : (Int, Int)
 keyboard76Keys = (16, 91)
+
+{-| Note range of a 88-key keyboard
+-}
+keyboard88Keys : (Int, Int)
 keyboard88Keys = (9, 96)
+
 
 -- UPDATE
 
+{-| Messages received when clicking a key or
+changing the keyboard's size
+-}
 type Msg
     = KeyUp Note
     | KeyDown Note
     | ChangeNoteRange (Int, Int)
 
+{-| Handle the messages
+-}
 update : Msg -> Model -> Model
 update msg model =
     case msg of
@@ -71,6 +141,10 @@ update msg model =
 
 
 -- VIEW
+
+{-| Show the Piano widget and, if set, the debug text and the
+keyboard size changer.
+-}
 view : Model -> Html Msg
 view model =
     let
@@ -79,7 +153,7 @@ view model =
                 [div [class "piano-container"]
                      [div [class "piano-keys"] inner]
                 ]
-        myStyle = node "style" [] [text PianoStyle.css]
+        myStyle = node "style" [] [text css]
 
         range = [fst model.noteRange .. snd model.noteRange]
 
@@ -118,6 +192,8 @@ view model =
                     (List.map (flip Set.member model.notes) range)
                 ] ++ debugNotes ++ sizeSelector)
 
+{-| Helper function to render a single note
+-}
 viewKey : Note -> Bool -> Html Msg
 viewKey note active =
     if isNatural note then
@@ -145,14 +221,20 @@ viewKey note active =
 
 -- Note helpers
 
+{-| Octave number of a note
+-}
 octave : Note -> Int
 octave note =
     note // 12
 
+{-| Return False is note is a flat or sharp, True otherwise
+-}
 isNatural : Note -> Bool
 isNatural note =
     List.member (note % 12) [0, 2, 4, 5, 7, 9, 11]
 
+{-| Represent a note number as a string
+-}
 noteName : Note -> String
 noteName note =
     let

@@ -1,8 +1,17 @@
-module PianoStyle exposing (..)
+module Piano.PianoStyle exposing (..)
 
--- Based on javascript-piano by michaelemp
--- https://github.com/michaelmp/js-piano
+{-|
+Exposes a style string with the correct styles for the widget
 
+@docs css
+
+Based on javascript-piano by michaelemp
+https://github.com/michaelmp/js-piano
+-}
+
+{-| Tag
+-}
+css : String
 css =
     """
     .piano {
