@@ -20,13 +20,14 @@ main =
 type alias Model = 
     { notes: Set.Set Note
     , noteRange: (Int, Int)
+    , interactive: Bool
     }
 
 type alias Note = Int
 
 initialModel : Model
 -- One octave keyboard, starting from C4
-initialModel = Model Set.empty (36, 60)
+initialModel = Model Set.empty (36, 60) True
 
 
 -- UPDATE
@@ -39,10 +40,16 @@ update : Msg -> Model -> Model
 update msg model =
     case msg of
         KeyUp note ->
-            { model | notes = Set.remove note model.notes }
+            if model.interactive then
+                { model | notes = Set.remove note model.notes }
+            else
+                model
 
         KeyDown note ->
-            { model | notes = Set.insert note model.notes }
+            if model.interactive then
+                { model | notes = Set.insert note model.notes }
+            else
+                model
 
 
 -- VIEW
