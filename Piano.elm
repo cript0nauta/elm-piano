@@ -22,7 +22,7 @@ type alias Model =
     , noteRange: (Int, Int)
     , interactive: Bool
     , showSizeSelector: Bool
-    , debug: String
+    , debugNotes: Bool
     }
 
 type alias Note = Int
@@ -34,7 +34,7 @@ initialModel =
     , noteRange = keyboard25Keys
     , interactive = True
     , showSizeSelector = True
-    , debug = ""
+    , debugNotes = True
     }
 
 keyboard12Keys = (48, 59)
@@ -103,12 +103,20 @@ view model =
                     |> List.intersperse (br [] [])
            else
                []
+
+        debugNotes =
+            if model.debugNotes then
+                [ div [] [text <| "Currently pressed notes: " ++ String.join ", "
+                    (model.notes |> Set.toList |> List.map noteName)
+                    ] ]
+            else
+                []
     in
         span [] ([myStyle
                 , container <| List.map2 viewKey
                     range
                     (List.map (flip Set.member model.notes) range)
-                ] ++ sizeSelector)
+                ] ++ debugNotes ++ sizeSelector)
 
 viewKey : Note -> Bool -> Html Msg
 viewKey note active =
