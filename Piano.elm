@@ -21,20 +21,35 @@ type alias Model =
     { notes: Set.Set Note
     , noteRange: (Int, Int)
     , interactive: Bool
+    , showSizeSelector: Bool
+    , debug: String
     }
 
 type alias Note = Int
 
 initialModel : Model
 -- One octave keyboard, starting from C4
-initialModel = Model Set.empty (36, 60) True
+initialModel =
+    { notes = Set.empty
+    , noteRange = keyboard25Keys
+    , interactive = True
+    , showSizeSelector = True
+    , debug = ""
+    }
 
+keyboard12Keys = (48, 59)
+keyboard25Keys = (36, 60)
+keyboard49Keys = (24, 72)
+keyboard61Keys = (24, 84)
+keyboard76Keys = (16, 91)
+keyboard88Keys = (9, 96)
 
 -- UPDATE
 
 type Msg
     = KeyUp Note
     | KeyDown Note
+    | ChangeNoteRange (Int, Int)
 
 update : Msg -> Model -> Model
 update msg model =
@@ -51,6 +66,9 @@ update msg model =
             else
                 model
 
+        ChangeNoteRange size ->
+            { model | noteRange = size }
+
 
 -- VIEW
 view : Model -> Html Msg
@@ -64,12 +82,33 @@ view model =
         myStyle = node "style" [] [text PianoStyle.css]
 
         range = [fst model.noteRange .. snd model.noteRange]
+
+        sizeSelector =
+            if model.showSizeSelector then
+               let
+                   keyboardOption size =
+                       let
+                           keys = snd size - fst size + 1
+                       in
+                           button [onClick (ChangeNoteRange size)]
+                                  [text (toString keys ++ "-key piano")]
+               in
+                  List.map keyboardOption
+                      [ keyboard12Keys
+                      , keyboard25Keys
+                      , keyboard49Keys
+                      , keyboard61Keys
+                      , keyboard76Keys
+                      , keyboard88Keys]
+                    |> List.intersperse (br [] [])
+           else
+               []
     in
-        span [] [myStyle
+        span [] ([myStyle
                 , container <| List.map2 viewKey
                     range
                     (List.map (flip Set.member model.notes) range)
-                ]
+                ] ++ sizeSelector)
 
 viewKey : Note -> Bool -> Html Msg
 viewKey note active =
