@@ -1,6 +1,6 @@
 # elm-piano
 
-![image](./img/piano.png)
+![image](https://raw.githubusercontent.com/sh4r3m4n/elm-piano/master/img/piano.png)
 
 ## Description
 
@@ -16,6 +16,12 @@ as pressed.
 
 If you want to see examples of how to use it to generate sound you should 
 check the example programs that use a MIDI.js port lo do it.
+
+## Documentation and examples
+
+The documentation of this package is available on http://package.elm-lang.org/packages/sh4r3m4n/elm-piano/.
+
+[Example 1](https://sh4r3m4n.github.io/elm-piano/examples/playmidi.html): Show the notes of a MIDI file
 
 ## Credits
 
