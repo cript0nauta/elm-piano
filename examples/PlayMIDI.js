@@ -7991,101 +7991,6 @@ var _elm_lang$html$Html_Events$Options = F2(
 		return {stopPropagation: a, preventDefault: b};
 	});
 
-var _sh4r3m4n$elm_piano$PlayerController$Model = function (a) {
-	return {status: a};
-};
-var _sh4r3m4n$elm_piano$PlayerController$Stopped = {ctor: 'Stopped'};
-var _sh4r3m4n$elm_piano$PlayerController$model = _sh4r3m4n$elm_piano$PlayerController$Model(_sh4r3m4n$elm_piano$PlayerController$Stopped);
-var _sh4r3m4n$elm_piano$PlayerController$Paused = {ctor: 'Paused'};
-var _sh4r3m4n$elm_piano$PlayerController$Playing = {ctor: 'Playing'};
-var _sh4r3m4n$elm_piano$PlayerController$update = F2(
-	function (msg, model) {
-		var _p0 = msg;
-		switch (_p0.ctor) {
-			case 'Resume':
-				return _elm_lang$core$Native_Utils.update(
-					model,
-					{status: _sh4r3m4n$elm_piano$PlayerController$Playing});
-			case 'Pause':
-				return _elm_lang$core$Native_Utils.update(
-					model,
-					{status: _sh4r3m4n$elm_piano$PlayerController$Paused});
-			case 'Stop':
-				return _elm_lang$core$Native_Utils.update(
-					model,
-					{status: _sh4r3m4n$elm_piano$PlayerController$Stopped});
-			default:
-				var newStatus = function () {
-					var _p1 = model.status;
-					switch (_p1.ctor) {
-						case 'Playing':
-							return _sh4r3m4n$elm_piano$PlayerController$Paused;
-						case 'Paused':
-							return _sh4r3m4n$elm_piano$PlayerController$Playing;
-						default:
-							return _p1;
-					}
-				}();
-				return _elm_lang$core$Native_Utils.update(
-					model,
-					{status: newStatus});
-		}
-	});
-var _sh4r3m4n$elm_piano$PlayerController$Stop = {ctor: 'Stop'};
-var _sh4r3m4n$elm_piano$PlayerController$Pause = {ctor: 'Pause'};
-var _sh4r3m4n$elm_piano$PlayerController$Resume = {ctor: 'Resume'};
-var _sh4r3m4n$elm_piano$PlayerController$playPause = function (status) {
-	var _p2 = status;
-	if (_p2.ctor === 'Playing') {
-		return A2(
-			_elm_lang$html$Html$button,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html_Events$onClick(_sh4r3m4n$elm_piano$PlayerController$Pause)
-				]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html$text('Pause')
-				]));
-	} else {
-		return A2(
-			_elm_lang$html$Html$button,
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html_Events$onClick(_sh4r3m4n$elm_piano$PlayerController$Resume)
-				]),
-			_elm_lang$core$Native_List.fromArray(
-				[
-					_elm_lang$html$Html$text('Play')
-				]));
-	}
-};
-var _sh4r3m4n$elm_piano$PlayerController$view = function (model) {
-	return A2(
-		_elm_lang$html$Html$div,
-		_elm_lang$core$Native_List.fromArray(
-			[]),
-		_elm_lang$core$Native_List.fromArray(
-			[
-				A2(
-				_elm_lang$html$Html$button,
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html_Events$onClick(_sh4r3m4n$elm_piano$PlayerController$Stop)
-					]),
-				_elm_lang$core$Native_List.fromArray(
-					[
-						_elm_lang$html$Html$text('Stop')
-					])),
-				_sh4r3m4n$elm_piano$PlayerController$playPause(model.status)
-			]));
-};
-var _sh4r3m4n$elm_piano$PlayerController$main = {
-	main: _elm_lang$html$Html_App$beginnerProgram(
-		{model: _sh4r3m4n$elm_piano$PlayerController$model, view: _sh4r3m4n$elm_piano$PlayerController$view, update: _sh4r3m4n$elm_piano$PlayerController$update})
-};
-var _sh4r3m4n$elm_piano$PlayerController$PlayPause = {ctor: 'PlayPause'};
-
 var _sh4r3m4n$elm_piano$Piano_PianoStyle$css = '\n    .piano {\n      padding: 5px;\n      margin: 0 auto;\n      /* width: 550px; */\n    }\n\n    .piano-container, .piano-javascript {\n      border-radius: 5px;\n      margin: 5px;\n      padding: 5px;\n      white-space: nowrap;\n    }\n\n    .piano-container {\n      text-align: center;\n    }\n\n    .piano-keys{\n      word-spacing: 0;\n      letter-spacing: 0;\n      font-size: 0;\n    }\n\n    .piano-white, .piano-black {\n      display: inline-block;\n      position: relative;\n      vertical-align: top;\n      direction: ltr;\n      margin: 0;\n      padding: 0;\n    }\n\n    .piano-white, .piano-black-raised {\n      border-radius: 2px;\n      border-color: #222;\n      border-style: solid;\n      border-width: 1px 1px 1px 1px;\n    }\n\n    .piano-white {\n      width: 24px;\n      height: 100px;\n      background-color: white;\n      z-index: 1;\n    }\n\n    .piano-black {\n      width: 0px;\n      height: 100px;\n      z-index: 2;\n    }\n\n    .piano-black-raised {\n      width: 16px;\n      height: 70px;\n      position: relative;\n      left: -10px;\n      background-color: black;\n    }\n\n    .piano-white.pressed {\n        background-color: #88FFAA;\n    }\n\n    .piano-black-raised.pressed{\n        background-color: #55AA55;\n    }\n\n    .piano-white.pressed {\n        background-color: #88FFAA;\n    }\n\n    .piano-black-raised.pressed{\n        background-color: #55AA55;\n    }\n';
 
 var _sh4r3m4n$elm_piano$Piano$isNatural = function (note) {
@@ -8332,7 +8237,102 @@ var _sh4r3m4n$elm_piano$Piano$view = function (model) {
 			A2(_elm_lang$core$Basics_ops['++'], debugNotes, sizeSelector)));
 };
 
-var _sh4r3m4n$elm_piano$Main$init = function () {
+var _sh4r3m4n$elm_piano$PlayerController$Model = function (a) {
+	return {status: a};
+};
+var _sh4r3m4n$elm_piano$PlayerController$Stopped = {ctor: 'Stopped'};
+var _sh4r3m4n$elm_piano$PlayerController$model = _sh4r3m4n$elm_piano$PlayerController$Model(_sh4r3m4n$elm_piano$PlayerController$Stopped);
+var _sh4r3m4n$elm_piano$PlayerController$Paused = {ctor: 'Paused'};
+var _sh4r3m4n$elm_piano$PlayerController$Playing = {ctor: 'Playing'};
+var _sh4r3m4n$elm_piano$PlayerController$update = F2(
+	function (msg, model) {
+		var _p0 = msg;
+		switch (_p0.ctor) {
+			case 'Resume':
+				return _elm_lang$core$Native_Utils.update(
+					model,
+					{status: _sh4r3m4n$elm_piano$PlayerController$Playing});
+			case 'Pause':
+				return _elm_lang$core$Native_Utils.update(
+					model,
+					{status: _sh4r3m4n$elm_piano$PlayerController$Paused});
+			case 'Stop':
+				return _elm_lang$core$Native_Utils.update(
+					model,
+					{status: _sh4r3m4n$elm_piano$PlayerController$Stopped});
+			default:
+				var newStatus = function () {
+					var _p1 = model.status;
+					switch (_p1.ctor) {
+						case 'Playing':
+							return _sh4r3m4n$elm_piano$PlayerController$Paused;
+						case 'Paused':
+							return _sh4r3m4n$elm_piano$PlayerController$Playing;
+						default:
+							return _p1;
+					}
+				}();
+				return _elm_lang$core$Native_Utils.update(
+					model,
+					{status: newStatus});
+		}
+	});
+var _sh4r3m4n$elm_piano$PlayerController$Stop = {ctor: 'Stop'};
+var _sh4r3m4n$elm_piano$PlayerController$Pause = {ctor: 'Pause'};
+var _sh4r3m4n$elm_piano$PlayerController$Resume = {ctor: 'Resume'};
+var _sh4r3m4n$elm_piano$PlayerController$playPause = function (status) {
+	var _p2 = status;
+	if (_p2.ctor === 'Playing') {
+		return A2(
+			_elm_lang$html$Html$button,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html_Events$onClick(_sh4r3m4n$elm_piano$PlayerController$Pause)
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html$text('Pause')
+				]));
+	} else {
+		return A2(
+			_elm_lang$html$Html$button,
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html_Events$onClick(_sh4r3m4n$elm_piano$PlayerController$Resume)
+				]),
+			_elm_lang$core$Native_List.fromArray(
+				[
+					_elm_lang$html$Html$text('Play')
+				]));
+	}
+};
+var _sh4r3m4n$elm_piano$PlayerController$view = function (model) {
+	return A2(
+		_elm_lang$html$Html$div,
+		_elm_lang$core$Native_List.fromArray(
+			[]),
+		_elm_lang$core$Native_List.fromArray(
+			[
+				A2(
+				_elm_lang$html$Html$button,
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html_Events$onClick(_sh4r3m4n$elm_piano$PlayerController$Stop)
+					]),
+				_elm_lang$core$Native_List.fromArray(
+					[
+						_elm_lang$html$Html$text('Stop')
+					])),
+				_sh4r3m4n$elm_piano$PlayerController$playPause(model.status)
+			]));
+};
+var _sh4r3m4n$elm_piano$PlayerController$main = {
+	main: _elm_lang$html$Html_App$beginnerProgram(
+		{model: _sh4r3m4n$elm_piano$PlayerController$model, view: _sh4r3m4n$elm_piano$PlayerController$view, update: _sh4r3m4n$elm_piano$PlayerController$update})
+};
+var _sh4r3m4n$elm_piano$PlayerController$PlayPause = {ctor: 'PlayPause'};
+
+var _sh4r3m4n$elm_piano$PlayMIDI$init = function () {
 	var model = {
 		midiUrl: '',
 		midiJSLoaded: false,
@@ -8348,27 +8348,27 @@ var _sh4r3m4n$elm_piano$Main$init = function () {
 	};
 	return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 }();
-var _sh4r3m4n$elm_piano$Main$loadMIDI = _elm_lang$core$Native_Platform.outgoingPort(
+var _sh4r3m4n$elm_piano$PlayMIDI$loadMIDI = _elm_lang$core$Native_Platform.outgoingPort(
 	'loadMIDI',
 	function (v) {
 		return v;
 	});
-var _sh4r3m4n$elm_piano$Main$resume = _elm_lang$core$Native_Platform.outgoingPort(
+var _sh4r3m4n$elm_piano$PlayMIDI$resume = _elm_lang$core$Native_Platform.outgoingPort(
 	'resume',
 	function (v) {
 		return null;
 	});
-var _sh4r3m4n$elm_piano$Main$pause = _elm_lang$core$Native_Platform.outgoingPort(
+var _sh4r3m4n$elm_piano$PlayMIDI$pause = _elm_lang$core$Native_Platform.outgoingPort(
 	'pause',
 	function (v) {
 		return null;
 	});
-var _sh4r3m4n$elm_piano$Main$stop = _elm_lang$core$Native_Platform.outgoingPort(
+var _sh4r3m4n$elm_piano$PlayMIDI$stop = _elm_lang$core$Native_Platform.outgoingPort(
 	'stop',
 	function (v) {
 		return null;
 	});
-var _sh4r3m4n$elm_piano$Main$update = F2(
+var _sh4r3m4n$elm_piano$PlayMIDI$update = F2(
 	function (msg, model) {
 		var _p0 = msg;
 		switch (_p0.ctor) {
@@ -8386,7 +8386,7 @@ var _sh4r3m4n$elm_piano$Main$update = F2(
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{midiFileLoaded: false, midiError: _elm_lang$core$Maybe$Nothing}),
-					_1: _sh4r3m4n$elm_piano$Main$loadMIDI(model.midiUrl)
+					_1: _sh4r3m4n$elm_piano$PlayMIDI$loadMIDI(model.midiUrl)
 				};
 			case 'LoadOK':
 				return {
@@ -8394,7 +8394,7 @@ var _sh4r3m4n$elm_piano$Main$update = F2(
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{midiFileLoaded: true}),
-					_1: _sh4r3m4n$elm_piano$Main$resume(
+					_1: _sh4r3m4n$elm_piano$PlayMIDI$resume(
 						{ctor: '_Tuple0'})
 				};
 			case 'LoadFailed':
@@ -8414,7 +8414,7 @@ var _sh4r3m4n$elm_piano$Main$update = F2(
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{midiJSLoaded: true}),
-					_1: _sh4r3m4n$elm_piano$Main$loadMIDI('midis/cabeza.mid')
+					_1: _sh4r3m4n$elm_piano$PlayMIDI$loadMIDI('midis/cabeza.mid')
 				};
 			case 'ChangePlayerStatus':
 				var playerModel = A2(_sh4r3m4n$elm_piano$PlayerController$update, _p0._0, model.playerInfo);
@@ -8422,13 +8422,13 @@ var _sh4r3m4n$elm_piano$Main$update = F2(
 					var _p1 = playerModel.status;
 					switch (_p1.ctor) {
 						case 'Playing':
-							return _sh4r3m4n$elm_piano$Main$resume(
+							return _sh4r3m4n$elm_piano$PlayMIDI$resume(
 								{ctor: '_Tuple0'});
 						case 'Paused':
-							return _sh4r3m4n$elm_piano$Main$pause(
+							return _sh4r3m4n$elm_piano$PlayMIDI$pause(
 								{ctor: '_Tuple0'});
 						default:
-							return _sh4r3m4n$elm_piano$Main$stop(
+							return _sh4r3m4n$elm_piano$PlayMIDI$stop(
 								{ctor: '_Tuple0'});
 					}
 				}();
@@ -8479,60 +8479,60 @@ var _sh4r3m4n$elm_piano$Main$update = F2(
 				};
 		}
 	});
-var _sh4r3m4n$elm_piano$Main$midiFileLoaded = _elm_lang$core$Native_Platform.incomingPort(
+var _sh4r3m4n$elm_piano$PlayMIDI$midiFileLoaded = _elm_lang$core$Native_Platform.incomingPort(
 	'midiFileLoaded',
 	_elm_lang$core$Json_Decode$null(
 		{ctor: '_Tuple0'}));
-var _sh4r3m4n$elm_piano$Main$midiJSLoaded = _elm_lang$core$Native_Platform.incomingPort(
+var _sh4r3m4n$elm_piano$PlayMIDI$midiJSLoaded = _elm_lang$core$Native_Platform.incomingPort(
 	'midiJSLoaded',
 	_elm_lang$core$Json_Decode$null(
 		{ctor: '_Tuple0'}));
-var _sh4r3m4n$elm_piano$Main$midiLoadFailed = _elm_lang$core$Native_Platform.incomingPort('midiLoadFailed', _elm_lang$core$Json_Decode$string);
-var _sh4r3m4n$elm_piano$Main$noteOn = _elm_lang$core$Native_Platform.incomingPort('noteOn', _elm_lang$core$Json_Decode$int);
-var _sh4r3m4n$elm_piano$Main$noteOff = _elm_lang$core$Native_Platform.incomingPort('noteOff', _elm_lang$core$Json_Decode$int);
-var _sh4r3m4n$elm_piano$Main$Model = F6(
+var _sh4r3m4n$elm_piano$PlayMIDI$midiLoadFailed = _elm_lang$core$Native_Platform.incomingPort('midiLoadFailed', _elm_lang$core$Json_Decode$string);
+var _sh4r3m4n$elm_piano$PlayMIDI$noteOn = _elm_lang$core$Native_Platform.incomingPort('noteOn', _elm_lang$core$Json_Decode$int);
+var _sh4r3m4n$elm_piano$PlayMIDI$noteOff = _elm_lang$core$Native_Platform.incomingPort('noteOff', _elm_lang$core$Json_Decode$int);
+var _sh4r3m4n$elm_piano$PlayMIDI$Model = F6(
 	function (a, b, c, d, e, f) {
 		return {midiUrl: a, midiJSLoaded: b, midiFileLoaded: c, midiError: d, playerInfo: e, piano: f};
 	});
-var _sh4r3m4n$elm_piano$Main$NoteOff = function (a) {
+var _sh4r3m4n$elm_piano$PlayMIDI$NoteOff = function (a) {
 	return {ctor: 'NoteOff', _0: a};
 };
-var _sh4r3m4n$elm_piano$Main$NoteOn = function (a) {
+var _sh4r3m4n$elm_piano$PlayMIDI$NoteOn = function (a) {
 	return {ctor: 'NoteOn', _0: a};
 };
-var _sh4r3m4n$elm_piano$Main$PianoEvent = function (a) {
+var _sh4r3m4n$elm_piano$PlayMIDI$PianoEvent = function (a) {
 	return {ctor: 'PianoEvent', _0: a};
 };
-var _sh4r3m4n$elm_piano$Main$ChangePlayerStatus = function (a) {
+var _sh4r3m4n$elm_piano$PlayMIDI$ChangePlayerStatus = function (a) {
 	return {ctor: 'ChangePlayerStatus', _0: a};
 };
-var _sh4r3m4n$elm_piano$Main$MidiJSLoaded = {ctor: 'MidiJSLoaded'};
-var _sh4r3m4n$elm_piano$Main$LoadFailed = function (a) {
+var _sh4r3m4n$elm_piano$PlayMIDI$MidiJSLoaded = {ctor: 'MidiJSLoaded'};
+var _sh4r3m4n$elm_piano$PlayMIDI$LoadFailed = function (a) {
 	return {ctor: 'LoadFailed', _0: a};
 };
-var _sh4r3m4n$elm_piano$Main$LoadOK = {ctor: 'LoadOK'};
-var _sh4r3m4n$elm_piano$Main$subscriptions = function (model) {
+var _sh4r3m4n$elm_piano$PlayMIDI$LoadOK = {ctor: 'LoadOK'};
+var _sh4r3m4n$elm_piano$PlayMIDI$subscriptions = function (model) {
 	return _elm_lang$core$Platform_Sub$batch(
 		_elm_lang$core$Native_List.fromArray(
 			[
-				_sh4r3m4n$elm_piano$Main$midiFileLoaded(
+				_sh4r3m4n$elm_piano$PlayMIDI$midiFileLoaded(
 				function (_p2) {
-					return _sh4r3m4n$elm_piano$Main$LoadOK;
+					return _sh4r3m4n$elm_piano$PlayMIDI$LoadOK;
 				}),
-				_sh4r3m4n$elm_piano$Main$midiLoadFailed(_sh4r3m4n$elm_piano$Main$LoadFailed),
-				_sh4r3m4n$elm_piano$Main$midiJSLoaded(
+				_sh4r3m4n$elm_piano$PlayMIDI$midiLoadFailed(_sh4r3m4n$elm_piano$PlayMIDI$LoadFailed),
+				_sh4r3m4n$elm_piano$PlayMIDI$midiJSLoaded(
 				function (_p3) {
-					return _sh4r3m4n$elm_piano$Main$MidiJSLoaded;
+					return _sh4r3m4n$elm_piano$PlayMIDI$MidiJSLoaded;
 				}),
-				_sh4r3m4n$elm_piano$Main$noteOn(_sh4r3m4n$elm_piano$Main$NoteOn),
-				_sh4r3m4n$elm_piano$Main$noteOff(_sh4r3m4n$elm_piano$Main$NoteOff)
+				_sh4r3m4n$elm_piano$PlayMIDI$noteOn(_sh4r3m4n$elm_piano$PlayMIDI$NoteOn),
+				_sh4r3m4n$elm_piano$PlayMIDI$noteOff(_sh4r3m4n$elm_piano$PlayMIDI$NoteOff)
 			]));
 };
-var _sh4r3m4n$elm_piano$Main$LoadMIDI = {ctor: 'LoadMIDI'};
-var _sh4r3m4n$elm_piano$Main$ChangeUrl = function (a) {
+var _sh4r3m4n$elm_piano$PlayMIDI$LoadMIDI = {ctor: 'LoadMIDI'};
+var _sh4r3m4n$elm_piano$PlayMIDI$ChangeUrl = function (a) {
 	return {ctor: 'ChangeUrl', _0: a};
 };
-var _sh4r3m4n$elm_piano$Main$view = function (model) {
+var _sh4r3m4n$elm_piano$PlayMIDI$view = function (model) {
 	return model.midiJSLoaded ? A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
@@ -8543,7 +8543,7 @@ var _sh4r3m4n$elm_piano$Main$view = function (model) {
 				_elm_lang$html$Html$input,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Events$onInput(_sh4r3m4n$elm_piano$Main$ChangeUrl)
+						_elm_lang$html$Html_Events$onInput(_sh4r3m4n$elm_piano$PlayMIDI$ChangeUrl)
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[])),
@@ -8551,7 +8551,7 @@ var _sh4r3m4n$elm_piano$Main$view = function (model) {
 				_elm_lang$html$Html$button,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Events$onClick(_sh4r3m4n$elm_piano$Main$LoadMIDI)
+						_elm_lang$html$Html_Events$onClick(_sh4r3m4n$elm_piano$PlayMIDI$LoadMIDI)
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -8586,13 +8586,13 @@ var _sh4r3m4n$elm_piano$Main$view = function (model) {
 					[
 						A2(
 						_elm_lang$html$Html_App$map,
-						_sh4r3m4n$elm_piano$Main$ChangePlayerStatus,
+						_sh4r3m4n$elm_piano$PlayMIDI$ChangePlayerStatus,
 						_sh4r3m4n$elm_piano$PlayerController$view(model.playerInfo))
 					]) : _elm_lang$core$Native_List.fromArray(
 					[])),
 				A2(
 				_elm_lang$html$Html_App$map,
-				_sh4r3m4n$elm_piano$Main$PianoEvent,
+				_sh4r3m4n$elm_piano$PlayMIDI$PianoEvent,
 				_sh4r3m4n$elm_piano$Piano$view(model.piano))
 			])) : A2(
 		_elm_lang$html$Html$div,
@@ -8603,14 +8603,14 @@ var _sh4r3m4n$elm_piano$Main$view = function (model) {
 				_elm_lang$html$Html$text('MIDI.js not loaded')
 			]));
 };
-var _sh4r3m4n$elm_piano$Main$main = {
+var _sh4r3m4n$elm_piano$PlayMIDI$main = {
 	main: _elm_lang$html$Html_App$program(
-		{init: _sh4r3m4n$elm_piano$Main$init, view: _sh4r3m4n$elm_piano$Main$view, update: _sh4r3m4n$elm_piano$Main$update, subscriptions: _sh4r3m4n$elm_piano$Main$subscriptions})
+		{init: _sh4r3m4n$elm_piano$PlayMIDI$init, view: _sh4r3m4n$elm_piano$PlayMIDI$view, update: _sh4r3m4n$elm_piano$PlayMIDI$update, subscriptions: _sh4r3m4n$elm_piano$PlayMIDI$subscriptions})
 };
 
 var Elm = {};
-Elm['Main'] = Elm['Main'] || {};
-_elm_lang$core$Native_Platform.addPublicModule(Elm['Main'], 'Main', typeof _sh4r3m4n$elm_piano$Main$main === 'undefined' ? null : _sh4r3m4n$elm_piano$Main$main);
+Elm['PlayMIDI'] = Elm['PlayMIDI'] || {};
+_elm_lang$core$Native_Platform.addPublicModule(Elm['PlayMIDI'], 'PlayMIDI', typeof _sh4r3m4n$elm_piano$PlayMIDI$main === 'undefined' ? null : _sh4r3m4n$elm_piano$PlayMIDI$main);
 
 if (typeof define === "function" && define['amd'])
 {

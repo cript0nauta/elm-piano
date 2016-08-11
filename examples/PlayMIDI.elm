@@ -1,4 +1,4 @@
-port module Main exposing (..)
+port module PlayMIDI exposing (..)
 import Html exposing (..)
 import Html.App as App
 import Html.Attributes exposing (..)
