@@ -3,7 +3,7 @@ module Piano exposing (
     keyboard25Keys, keyboard49Keys, keyboard61Keys, keyboard76Keys,
     keyboard88Keys, noteName, octave, update, view)
 
-{-| 
+{-| A customizable piano component
 
 # Model
 @docs Model
@@ -51,11 +51,25 @@ import Piano.PianoStyle exposing (css)
 
 -- MODEL
 
-{-| The model of the widget
+{-| The model of the widget.
+
+notes is the set of currently pressed notes.
+
+noteRange determines the first and last notes of the keyboard.
+
+If interactive is True, the widget will generate KeyUp and KeyDown messages
+when the user clicks on a note. (Now this mode is experimental and has some
+UI issues).
+
+If showSizeSelector is True a button group will be shown to select the keyboard
+size.
+
+If debugNotes is True a text will appear, showin the note names of each
+currently pressed note.
 -}
 type alias Model = 
     { notes: Set.Set Note
-    , noteRange: (Int, Int)
+    , noteRange: (Note, Note)
     , interactive: Bool
     , showSizeSelector: Bool
     , debugNotes: Bool
@@ -68,6 +82,9 @@ See http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note_
 type alias Note = Int
 
 {-| Common initial configuration for the widget
+
+Now it starts with no keys being pressed in a 25-key keyboard, in interactive
+mode and with the size selector and the note debugger.
 -}
 initialModel : Model
 initialModel =
@@ -119,7 +136,7 @@ type Msg
     | KeyDown Note
     | ChangeNoteRange (Int, Int)
 
-{-| Handle the messages
+{-| Handle the messages by updating model.notes or model.noteRange
 -}
 update : Msg -> Model -> Model
 update msg model =
@@ -142,7 +159,7 @@ update msg model =
 
 -- VIEW
 
-{-| Show the Piano widget and, if set, the debug text and the
+{-| Show the Piano widget and, if set in the model, the debug text and the
 keyboard size changer.
 -}
 view : Model -> Html Msg

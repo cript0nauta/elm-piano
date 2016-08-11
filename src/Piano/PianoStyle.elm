@@ -1,7 +1,9 @@
 module Piano.PianoStyle exposing (..)
 
 {-|
-Exposes a style string with the correct styles for the widget
+Exposes a single string with the correct CSS styles for the widget.
+
+This was made an extra module to avoid long CSS styles in the main script.
 
 @docs css
 
@@ -9,7 +11,7 @@ Based on javascript-piano by michaelemp
 https://github.com/michaelmp/js-piano
 -}
 
-{-| Tag
+{-| CSS style
 -}
 css : String
 css =
