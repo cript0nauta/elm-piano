@@ -1,7 +1,7 @@
 module Piano.PianoStyle exposing (..)
 
 {-|
-Exposes a single string with the correct CSS styles for the widget.
+Exposes a single string with the correct CSS styles for the component.
 
 This was made an extra module to avoid long CSS styles in the main script.
 

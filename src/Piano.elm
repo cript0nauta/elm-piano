@@ -51,13 +51,13 @@ import Piano.PianoStyle exposing (css)
 
 -- MODEL
 
-{-| The model of the widget.
+{-| The model of the component.
 
 notes is the set of currently pressed notes.
 
 noteRange determines the first and last notes of the keyboard.
 
-If interactive is True, the widget will generate KeyUp and KeyDown messages
+If interactive is True, the component will generate KeyUp and KeyDown messages
 when the user clicks on a note. (Now this mode is experimental and has some
 UI issues).
 
@@ -81,7 +81,7 @@ See http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note_
 -}
 type alias Note = Int
 
-{-| Common initial configuration for the widget
+{-| Common initial configuration for the component
 
 Now it starts with no keys being pressed in a 25-key keyboard, in interactive
 mode and with the size selector and the note debugger.
@@ -159,7 +159,7 @@ update msg model =
 
 -- VIEW
 
-{-| Show the Piano widget and, if set in the model, the debug text and the
+{-| Show the Piano component and, if set in the model, the debug text and the
 keyboard size changer.
 -}
 view : Model -> Html Msg
@@ -203,7 +203,7 @@ view model =
             else
                 []
     in
-        span [] ([myStyle
+        span [style [("text-align", "center")]] ([myStyle
                 , container <| List.map2 viewKey
                     range
                     (List.map (flip Set.member model.notes) range)

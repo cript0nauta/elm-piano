@@ -3510,40 +3510,17 @@ var incomingPortMap = F2(function subMap(tagger, finalTagger)
 
 function setupIncomingPort(name, callback)
 {
-	var sentBeforeInit = [];
 	var subs = _elm_lang$core$Native_List.Nil;
 	var converter = effectManagers[name].converter;
-	var currentOnEffects = preInitOnEffects;
-	var currentSend = preInitSend;
 
 	// CREATE MANAGER
 
 	var init = _elm_lang$core$Native_Scheduler.succeed(null);
 
-	function preInitOnEffects(router, subList, state)
-	{
-		var postInitResult = postInitOnEffects(router, subList, state);
-
-		for(var i = 0; i < sentBeforeInit.length; i++)
-		{
-			postInitSend(sentBeforeInit[i]);
-		}
-
-		sentBeforeInit = null; // to release objects held in queue
-		currentSend = postInitSend;
-		currentOnEffects = postInitOnEffects;
-		return postInitResult;
-	}
-
-	function postInitOnEffects(router, subList, state)
+	function onEffects(router, subList, state)
 	{
 		subs = subList;
 		return init;
-	}
-
-	function onEffects(router, subList, state)
-	{
-		return currentOnEffects(router, subList, state);
 	}
 
 	effectManagers[name].init = init;
@@ -3551,14 +3528,9 @@ function setupIncomingPort(name, callback)
 
 	// PUBLIC API
 
-	function preInitSend(value)
+	function send(value)
 	{
-		sentBeforeInit.push(value);
-	}
-
-	function postInitSend(incomingValue)
-	{
-		var result = A2(_elm_lang$core$Json_Decode$decodeValue, converter, incomingValue);
+		var result = A2(_elm_lang$core$Json_Decode$decodeValue, converter, value);
 		if (result.ctor === 'Err')
 		{
 			throw new Error('Trying to send an unexpected type of value through port `' + name + '`:\n' + result._0);
@@ -3571,11 +3543,6 @@ function setupIncomingPort(name, callback)
 			callback(temp._0(value));
 			temp = temp._1;
 		}
-	}
-
-	function send(incomingValue)
-	{
-		currentSend(incomingValue);
 	}
 
 	return { send: send };
@@ -3600,7 +3567,6 @@ return {
 };
 
 }();
-
 var _elm_lang$core$Platform$hack = _elm_lang$core$Native_Scheduler.succeed;
 var _elm_lang$core$Platform$sendToSelf = _elm_lang$core$Native_Platform.sendToSelf;
 var _elm_lang$core$Platform$sendToApp = _elm_lang$core$Native_Platform.sendToApp;
@@ -8025,37 +7991,37 @@ var _elm_lang$html$Html_Events$Options = F2(
 		return {stopPropagation: a, preventDefault: b};
 	});
 
-var _user$project$PlayerController$Model = function (a) {
+var _sh4r3m4n$elm_piano$PlayerController$Model = function (a) {
 	return {status: a};
 };
-var _user$project$PlayerController$Stopped = {ctor: 'Stopped'};
-var _user$project$PlayerController$model = _user$project$PlayerController$Model(_user$project$PlayerController$Stopped);
-var _user$project$PlayerController$Paused = {ctor: 'Paused'};
-var _user$project$PlayerController$Playing = {ctor: 'Playing'};
-var _user$project$PlayerController$update = F2(
+var _sh4r3m4n$elm_piano$PlayerController$Stopped = {ctor: 'Stopped'};
+var _sh4r3m4n$elm_piano$PlayerController$model = _sh4r3m4n$elm_piano$PlayerController$Model(_sh4r3m4n$elm_piano$PlayerController$Stopped);
+var _sh4r3m4n$elm_piano$PlayerController$Paused = {ctor: 'Paused'};
+var _sh4r3m4n$elm_piano$PlayerController$Playing = {ctor: 'Playing'};
+var _sh4r3m4n$elm_piano$PlayerController$update = F2(
 	function (msg, model) {
 		var _p0 = msg;
 		switch (_p0.ctor) {
 			case 'Resume':
 				return _elm_lang$core$Native_Utils.update(
 					model,
-					{status: _user$project$PlayerController$Playing});
+					{status: _sh4r3m4n$elm_piano$PlayerController$Playing});
 			case 'Pause':
 				return _elm_lang$core$Native_Utils.update(
 					model,
-					{status: _user$project$PlayerController$Paused});
+					{status: _sh4r3m4n$elm_piano$PlayerController$Paused});
 			case 'Stop':
 				return _elm_lang$core$Native_Utils.update(
 					model,
-					{status: _user$project$PlayerController$Stopped});
+					{status: _sh4r3m4n$elm_piano$PlayerController$Stopped});
 			default:
 				var newStatus = function () {
 					var _p1 = model.status;
 					switch (_p1.ctor) {
 						case 'Playing':
-							return _user$project$PlayerController$Paused;
+							return _sh4r3m4n$elm_piano$PlayerController$Paused;
 						case 'Paused':
-							return _user$project$PlayerController$Playing;
+							return _sh4r3m4n$elm_piano$PlayerController$Playing;
 						default:
 							return _p1;
 					}
@@ -8065,17 +8031,17 @@ var _user$project$PlayerController$update = F2(
 					{status: newStatus});
 		}
 	});
-var _user$project$PlayerController$Stop = {ctor: 'Stop'};
-var _user$project$PlayerController$Pause = {ctor: 'Pause'};
-var _user$project$PlayerController$Resume = {ctor: 'Resume'};
-var _user$project$PlayerController$playPause = function (status) {
+var _sh4r3m4n$elm_piano$PlayerController$Stop = {ctor: 'Stop'};
+var _sh4r3m4n$elm_piano$PlayerController$Pause = {ctor: 'Pause'};
+var _sh4r3m4n$elm_piano$PlayerController$Resume = {ctor: 'Resume'};
+var _sh4r3m4n$elm_piano$PlayerController$playPause = function (status) {
 	var _p2 = status;
 	if (_p2.ctor === 'Playing') {
 		return A2(
 			_elm_lang$html$Html$button,
 			_elm_lang$core$Native_List.fromArray(
 				[
-					_elm_lang$html$Html_Events$onClick(_user$project$PlayerController$Pause)
+					_elm_lang$html$Html_Events$onClick(_sh4r3m4n$elm_piano$PlayerController$Pause)
 				]),
 			_elm_lang$core$Native_List.fromArray(
 				[
@@ -8086,7 +8052,7 @@ var _user$project$PlayerController$playPause = function (status) {
 			_elm_lang$html$Html$button,
 			_elm_lang$core$Native_List.fromArray(
 				[
-					_elm_lang$html$Html_Events$onClick(_user$project$PlayerController$Resume)
+					_elm_lang$html$Html_Events$onClick(_sh4r3m4n$elm_piano$PlayerController$Resume)
 				]),
 			_elm_lang$core$Native_List.fromArray(
 				[
@@ -8094,7 +8060,7 @@ var _user$project$PlayerController$playPause = function (status) {
 				]));
 	}
 };
-var _user$project$PlayerController$view = function (model) {
+var _sh4r3m4n$elm_piano$PlayerController$view = function (model) {
 	return A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
@@ -8105,35 +8071,35 @@ var _user$project$PlayerController$view = function (model) {
 				_elm_lang$html$Html$button,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Events$onClick(_user$project$PlayerController$Stop)
+						_elm_lang$html$Html_Events$onClick(_sh4r3m4n$elm_piano$PlayerController$Stop)
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
 						_elm_lang$html$Html$text('Stop')
 					])),
-				_user$project$PlayerController$playPause(model.status)
+				_sh4r3m4n$elm_piano$PlayerController$playPause(model.status)
 			]));
 };
-var _user$project$PlayerController$main = {
+var _sh4r3m4n$elm_piano$PlayerController$main = {
 	main: _elm_lang$html$Html_App$beginnerProgram(
-		{model: _user$project$PlayerController$model, view: _user$project$PlayerController$view, update: _user$project$PlayerController$update})
+		{model: _sh4r3m4n$elm_piano$PlayerController$model, view: _sh4r3m4n$elm_piano$PlayerController$view, update: _sh4r3m4n$elm_piano$PlayerController$update})
 };
-var _user$project$PlayerController$PlayPause = {ctor: 'PlayPause'};
+var _sh4r3m4n$elm_piano$PlayerController$PlayPause = {ctor: 'PlayPause'};
 
-var _user$project$Piano_PianoStyle$css = '\n    .piano {\n      padding: 5px;\n      margin: 0 auto;\n      /* width: 550px; */\n    }\n\n    .piano-container, .piano-javascript {\n      border-radius: 5px;\n      margin: 5px;\n      padding: 5px;\n      white-space: nowrap;\n    }\n\n    .piano-container {\n      text-align: center;\n    }\n\n    .piano-keys{\n      word-spacing: 0;\n      letter-spacing: 0;\n      font-size: 0;\n    }\n\n    .piano-white, .piano-black {\n      display: inline-block;\n      position: relative;\n      vertical-align: top;\n      direction: ltr;\n      margin: 0;\n      padding: 0;\n    }\n\n    .piano-white, .piano-black-raised {\n      border-radius: 2px;\n      border-color: #222;\n      border-style: solid;\n      border-width: 1px 1px 1px 1px;\n    }\n\n    .piano-white {\n      width: 24px;\n      height: 100px;\n      background-color: white;\n      z-index: 1;\n    }\n\n    .piano-black {\n      width: 0px;\n      height: 100px;\n      z-index: 2;\n    }\n\n    .piano-black-raised {\n      width: 16px;\n      height: 70px;\n      position: relative;\n      left: -10px;\n      background-color: black;\n    }\n\n    .piano-white.pressed {\n        background-color: #88FFAA;\n    }\n\n    .piano-black-raised.pressed{\n        background-color: #55AA55;\n    }\n\n    .piano-white.pressed {\n        background-color: #88FFAA;\n    }\n\n    .piano-black-raised.pressed{\n        background-color: #55AA55;\n    }\n';
+var _sh4r3m4n$elm_piano$Piano_PianoStyle$css = '\n    .piano {\n      padding: 5px;\n      margin: 0 auto;\n      /* width: 550px; */\n    }\n\n    .piano-container, .piano-javascript {\n      border-radius: 5px;\n      margin: 5px;\n      padding: 5px;\n      white-space: nowrap;\n    }\n\n    .piano-container {\n      text-align: center;\n    }\n\n    .piano-keys{\n      word-spacing: 0;\n      letter-spacing: 0;\n      font-size: 0;\n    }\n\n    .piano-white, .piano-black {\n      display: inline-block;\n      position: relative;\n      vertical-align: top;\n      direction: ltr;\n      margin: 0;\n      padding: 0;\n    }\n\n    .piano-white, .piano-black-raised {\n      border-radius: 2px;\n      border-color: #222;\n      border-style: solid;\n      border-width: 1px 1px 1px 1px;\n    }\n\n    .piano-white {\n      width: 24px;\n      height: 100px;\n      background-color: white;\n      z-index: 1;\n    }\n\n    .piano-black {\n      width: 0px;\n      height: 100px;\n      z-index: 2;\n    }\n\n    .piano-black-raised {\n      width: 16px;\n      height: 70px;\n      position: relative;\n      left: -10px;\n      background-color: black;\n    }\n\n    .piano-white.pressed {\n        background-color: #88FFAA;\n    }\n\n    .piano-black-raised.pressed{\n        background-color: #55AA55;\n    }\n\n    .piano-white.pressed {\n        background-color: #88FFAA;\n    }\n\n    .piano-black-raised.pressed{\n        background-color: #55AA55;\n    }\n';
 
-var _user$project$Piano$isNatural = function (note) {
+var _sh4r3m4n$elm_piano$Piano$isNatural = function (note) {
 	return A2(
 		_elm_lang$core$List$member,
 		A2(_elm_lang$core$Basics_ops['%'], note, 12),
 		_elm_lang$core$Native_List.fromArray(
 			[0, 2, 4, 5, 7, 9, 11]));
 };
-var _user$project$Piano$octave = function (note) {
+var _sh4r3m4n$elm_piano$Piano$octave = function (note) {
 	return (note / 12) | 0;
 };
-var _user$project$Piano$noteName = function (note) {
-	var alteration = _user$project$Piano$isNatural(note) ? '' : '#';
+var _sh4r3m4n$elm_piano$Piano$noteName = function (note) {
+	var alteration = _sh4r3m4n$elm_piano$Piano$isNatural(note) ? '' : '#';
 	var getCharAt = F2(
 		function (n, str) {
 			return A3(_elm_lang$core$String$slice, n, n + 1, str);
@@ -8149,9 +8115,9 @@ var _user$project$Piano$noteName = function (note) {
 			_elm_lang$core$Basics_ops['++'],
 			alteration,
 			_elm_lang$core$Basics$toString(
-				_user$project$Piano$octave(note))));
+				_sh4r3m4n$elm_piano$Piano$octave(note))));
 };
-var _user$project$Piano$update = F2(
+var _sh4r3m4n$elm_piano$Piano$update = F2(
 	function (msg, model) {
 		var _p0 = msg;
 		switch (_p0.ctor) {
@@ -8173,29 +8139,29 @@ var _user$project$Piano$update = F2(
 					{noteRange: _p0._0});
 		}
 	});
-var _user$project$Piano$keyboard88Keys = {ctor: '_Tuple2', _0: 9, _1: 96};
-var _user$project$Piano$keyboard76Keys = {ctor: '_Tuple2', _0: 16, _1: 91};
-var _user$project$Piano$keyboard61Keys = {ctor: '_Tuple2', _0: 24, _1: 84};
-var _user$project$Piano$keyboard49Keys = {ctor: '_Tuple2', _0: 24, _1: 72};
-var _user$project$Piano$keyboard25Keys = {ctor: '_Tuple2', _0: 36, _1: 60};
-var _user$project$Piano$keyboard12Keys = {ctor: '_Tuple2', _0: 48, _1: 59};
-var _user$project$Piano$initialModel = {notes: _elm_lang$core$Set$empty, noteRange: _user$project$Piano$keyboard25Keys, interactive: true, showSizeSelector: true, debugNotes: true};
-var _user$project$Piano$Model = F5(
+var _sh4r3m4n$elm_piano$Piano$keyboard88Keys = {ctor: '_Tuple2', _0: 9, _1: 96};
+var _sh4r3m4n$elm_piano$Piano$keyboard76Keys = {ctor: '_Tuple2', _0: 16, _1: 91};
+var _sh4r3m4n$elm_piano$Piano$keyboard61Keys = {ctor: '_Tuple2', _0: 24, _1: 84};
+var _sh4r3m4n$elm_piano$Piano$keyboard49Keys = {ctor: '_Tuple2', _0: 24, _1: 72};
+var _sh4r3m4n$elm_piano$Piano$keyboard25Keys = {ctor: '_Tuple2', _0: 36, _1: 60};
+var _sh4r3m4n$elm_piano$Piano$keyboard12Keys = {ctor: '_Tuple2', _0: 48, _1: 59};
+var _sh4r3m4n$elm_piano$Piano$initialModel = {notes: _elm_lang$core$Set$empty, noteRange: _sh4r3m4n$elm_piano$Piano$keyboard25Keys, interactive: true, showSizeSelector: true, debugNotes: true};
+var _sh4r3m4n$elm_piano$Piano$Model = F5(
 	function (a, b, c, d, e) {
 		return {notes: a, noteRange: b, interactive: c, showSizeSelector: d, debugNotes: e};
 	});
-var _user$project$Piano$ChangeNoteRange = function (a) {
+var _sh4r3m4n$elm_piano$Piano$ChangeNoteRange = function (a) {
 	return {ctor: 'ChangeNoteRange', _0: a};
 };
-var _user$project$Piano$KeyDown = function (a) {
+var _sh4r3m4n$elm_piano$Piano$KeyDown = function (a) {
 	return {ctor: 'KeyDown', _0: a};
 };
-var _user$project$Piano$KeyUp = function (a) {
+var _sh4r3m4n$elm_piano$Piano$KeyUp = function (a) {
 	return {ctor: 'KeyUp', _0: a};
 };
-var _user$project$Piano$viewKey = F2(
+var _sh4r3m4n$elm_piano$Piano$viewKey = F2(
 	function (note, active) {
-		return _user$project$Piano$isNatural(note) ? A2(
+		return _sh4r3m4n$elm_piano$Piano$isNatural(note) ? A2(
 			_elm_lang$html$Html$div,
 			_elm_lang$core$Native_List.fromArray(
 				[
@@ -8206,9 +8172,9 @@ var _user$project$Piano$viewKey = F2(
 							{ctor: '_Tuple2', _0: 'pressed', _1: active}
 						])),
 					_elm_lang$html$Html_Events$onMouseDown(
-					_user$project$Piano$KeyDown(note)),
+					_sh4r3m4n$elm_piano$Piano$KeyDown(note)),
 					_elm_lang$html$Html_Events$onMouseUp(
-					_user$project$Piano$KeyUp(note))
+					_sh4r3m4n$elm_piano$Piano$KeyUp(note))
 				]),
 			_elm_lang$core$Native_List.fromArray(
 				[])) : A2(
@@ -8230,15 +8196,15 @@ var _user$project$Piano$viewKey = F2(
 									{ctor: '_Tuple2', _0: 'pressed', _1: active}
 								])),
 							_elm_lang$html$Html_Events$onMouseDown(
-							_user$project$Piano$KeyDown(note)),
+							_sh4r3m4n$elm_piano$Piano$KeyDown(note)),
 							_elm_lang$html$Html_Events$onMouseUp(
-							_user$project$Piano$KeyUp(note))
+							_sh4r3m4n$elm_piano$Piano$KeyUp(note))
 						]),
 					_elm_lang$core$Native_List.fromArray(
 						[]))
 				]));
 	});
-var _user$project$Piano$view = function (model) {
+var _sh4r3m4n$elm_piano$Piano$view = function (model) {
 	var debugNotes = model.debugNotes ? _elm_lang$core$Native_List.fromArray(
 		[
 			A2(
@@ -8256,7 +8222,7 @@ var _user$project$Piano$view = function (model) {
 							', ',
 							A2(
 								_elm_lang$core$List$map,
-								_user$project$Piano$noteName,
+								_sh4r3m4n$elm_piano$Piano$noteName,
 								_elm_lang$core$Set$toList(model.notes)))))
 				]))
 		]) : _elm_lang$core$Native_List.fromArray(
@@ -8270,7 +8236,7 @@ var _user$project$Piano$view = function (model) {
 					_elm_lang$core$Native_List.fromArray(
 						[
 							_elm_lang$html$Html_Events$onClick(
-							_user$project$Piano$ChangeNoteRange(size))
+							_sh4r3m4n$elm_piano$Piano$ChangeNoteRange(size))
 						]),
 					_elm_lang$core$Native_List.fromArray(
 						[
@@ -8293,7 +8259,7 @@ var _user$project$Piano$view = function (model) {
 					_elm_lang$core$List$map,
 					keyboardOption,
 					_elm_lang$core$Native_List.fromArray(
-						[_user$project$Piano$keyboard12Keys, _user$project$Piano$keyboard25Keys, _user$project$Piano$keyboard49Keys, _user$project$Piano$keyboard61Keys, _user$project$Piano$keyboard76Keys, _user$project$Piano$keyboard88Keys])));
+						[_sh4r3m4n$elm_piano$Piano$keyboard12Keys, _sh4r3m4n$elm_piano$Piano$keyboard25Keys, _sh4r3m4n$elm_piano$Piano$keyboard49Keys, _sh4r3m4n$elm_piano$Piano$keyboard61Keys, _sh4r3m4n$elm_piano$Piano$keyboard76Keys, _sh4r3m4n$elm_piano$Piano$keyboard88Keys])));
 		} else {
 			return _elm_lang$core$Native_List.fromArray(
 				[]);
@@ -8309,7 +8275,7 @@ var _user$project$Piano$view = function (model) {
 			[]),
 		_elm_lang$core$Native_List.fromArray(
 			[
-				_elm_lang$html$Html$text(_user$project$Piano_PianoStyle$css)
+				_elm_lang$html$Html$text(_sh4r3m4n$elm_piano$Piano_PianoStyle$css)
 			]));
 	var container = function (inner) {
 		return A2(
@@ -8341,7 +8307,13 @@ var _user$project$Piano$view = function (model) {
 	return A2(
 		_elm_lang$html$Html$span,
 		_elm_lang$core$Native_List.fromArray(
-			[]),
+			[
+				_elm_lang$html$Html_Attributes$style(
+				_elm_lang$core$Native_List.fromArray(
+					[
+						{ctor: '_Tuple2', _0: 'text-align', _1: 'center'}
+					]))
+			]),
 		A2(
 			_elm_lang$core$Basics_ops['++'],
 			_elm_lang$core$Native_List.fromArray(
@@ -8350,7 +8322,7 @@ var _user$project$Piano$view = function (model) {
 					container(
 					A3(
 						_elm_lang$core$List$map2,
-						_user$project$Piano$viewKey,
+						_sh4r3m4n$elm_piano$Piano$viewKey,
 						range,
 						A2(
 							_elm_lang$core$List$map,
@@ -8360,43 +8332,43 @@ var _user$project$Piano$view = function (model) {
 			A2(_elm_lang$core$Basics_ops['++'], debugNotes, sizeSelector)));
 };
 
-var _user$project$Main$init = function () {
+var _sh4r3m4n$elm_piano$Main$init = function () {
 	var model = {
 		midiUrl: '',
 		midiJSLoaded: false,
 		midiFileLoaded: false,
 		midiError: _elm_lang$core$Maybe$Just('Not loaded'),
-		playerInfo: _user$project$PlayerController$model,
+		playerInfo: _sh4r3m4n$elm_piano$PlayerController$model,
 		piano: function () {
-			var p = _user$project$Piano$initialModel;
+			var p = _sh4r3m4n$elm_piano$Piano$initialModel;
 			return _elm_lang$core$Native_Utils.update(
 				p,
-				{noteRange: _user$project$Piano$keyboard61Keys, interactive: false});
+				{noteRange: _sh4r3m4n$elm_piano$Piano$keyboard61Keys, interactive: false});
 		}()
 	};
 	return {ctor: '_Tuple2', _0: model, _1: _elm_lang$core$Platform_Cmd$none};
 }();
-var _user$project$Main$loadMIDI = _elm_lang$core$Native_Platform.outgoingPort(
+var _sh4r3m4n$elm_piano$Main$loadMIDI = _elm_lang$core$Native_Platform.outgoingPort(
 	'loadMIDI',
 	function (v) {
 		return v;
 	});
-var _user$project$Main$resume = _elm_lang$core$Native_Platform.outgoingPort(
+var _sh4r3m4n$elm_piano$Main$resume = _elm_lang$core$Native_Platform.outgoingPort(
 	'resume',
 	function (v) {
 		return null;
 	});
-var _user$project$Main$pause = _elm_lang$core$Native_Platform.outgoingPort(
+var _sh4r3m4n$elm_piano$Main$pause = _elm_lang$core$Native_Platform.outgoingPort(
 	'pause',
 	function (v) {
 		return null;
 	});
-var _user$project$Main$stop = _elm_lang$core$Native_Platform.outgoingPort(
+var _sh4r3m4n$elm_piano$Main$stop = _elm_lang$core$Native_Platform.outgoingPort(
 	'stop',
 	function (v) {
 		return null;
 	});
-var _user$project$Main$update = F2(
+var _sh4r3m4n$elm_piano$Main$update = F2(
 	function (msg, model) {
 		var _p0 = msg;
 		switch (_p0.ctor) {
@@ -8414,7 +8386,7 @@ var _user$project$Main$update = F2(
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{midiFileLoaded: false, midiError: _elm_lang$core$Maybe$Nothing}),
-					_1: _user$project$Main$loadMIDI(model.midiUrl)
+					_1: _sh4r3m4n$elm_piano$Main$loadMIDI(model.midiUrl)
 				};
 			case 'LoadOK':
 				return {
@@ -8422,7 +8394,7 @@ var _user$project$Main$update = F2(
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{midiFileLoaded: true}),
-					_1: _user$project$Main$resume(
+					_1: _sh4r3m4n$elm_piano$Main$resume(
 						{ctor: '_Tuple0'})
 				};
 			case 'LoadFailed':
@@ -8442,21 +8414,21 @@ var _user$project$Main$update = F2(
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{midiJSLoaded: true}),
-					_1: _user$project$Main$loadMIDI('midis/cabeza.mid')
+					_1: _sh4r3m4n$elm_piano$Main$loadMIDI('midis/cabeza.mid')
 				};
 			case 'ChangePlayerStatus':
-				var playerModel = A2(_user$project$PlayerController$update, _p0._0, model.playerInfo);
+				var playerModel = A2(_sh4r3m4n$elm_piano$PlayerController$update, _p0._0, model.playerInfo);
 				var cmd = function () {
 					var _p1 = playerModel.status;
 					switch (_p1.ctor) {
 						case 'Playing':
-							return _user$project$Main$resume(
+							return _sh4r3m4n$elm_piano$Main$resume(
 								{ctor: '_Tuple0'});
 						case 'Paused':
-							return _user$project$Main$pause(
+							return _sh4r3m4n$elm_piano$Main$pause(
 								{ctor: '_Tuple0'});
 						default:
-							return _user$project$Main$stop(
+							return _sh4r3m4n$elm_piano$Main$stop(
 								{ctor: '_Tuple0'});
 					}
 				}();
@@ -8473,7 +8445,7 @@ var _user$project$Main$update = F2(
 					_0: _elm_lang$core$Native_Utils.update(
 						model,
 						{
-							piano: A2(_user$project$Piano$update, _p0._0, model.piano)
+							piano: A2(_sh4r3m4n$elm_piano$Piano$update, _p0._0, model.piano)
 						}),
 					_1: _elm_lang$core$Platform_Cmd$none
 				};
@@ -8507,60 +8479,60 @@ var _user$project$Main$update = F2(
 				};
 		}
 	});
-var _user$project$Main$midiFileLoaded = _elm_lang$core$Native_Platform.incomingPort(
+var _sh4r3m4n$elm_piano$Main$midiFileLoaded = _elm_lang$core$Native_Platform.incomingPort(
 	'midiFileLoaded',
 	_elm_lang$core$Json_Decode$null(
 		{ctor: '_Tuple0'}));
-var _user$project$Main$midiJSLoaded = _elm_lang$core$Native_Platform.incomingPort(
+var _sh4r3m4n$elm_piano$Main$midiJSLoaded = _elm_lang$core$Native_Platform.incomingPort(
 	'midiJSLoaded',
 	_elm_lang$core$Json_Decode$null(
 		{ctor: '_Tuple0'}));
-var _user$project$Main$midiLoadFailed = _elm_lang$core$Native_Platform.incomingPort('midiLoadFailed', _elm_lang$core$Json_Decode$string);
-var _user$project$Main$noteOn = _elm_lang$core$Native_Platform.incomingPort('noteOn', _elm_lang$core$Json_Decode$int);
-var _user$project$Main$noteOff = _elm_lang$core$Native_Platform.incomingPort('noteOff', _elm_lang$core$Json_Decode$int);
-var _user$project$Main$Model = F6(
+var _sh4r3m4n$elm_piano$Main$midiLoadFailed = _elm_lang$core$Native_Platform.incomingPort('midiLoadFailed', _elm_lang$core$Json_Decode$string);
+var _sh4r3m4n$elm_piano$Main$noteOn = _elm_lang$core$Native_Platform.incomingPort('noteOn', _elm_lang$core$Json_Decode$int);
+var _sh4r3m4n$elm_piano$Main$noteOff = _elm_lang$core$Native_Platform.incomingPort('noteOff', _elm_lang$core$Json_Decode$int);
+var _sh4r3m4n$elm_piano$Main$Model = F6(
 	function (a, b, c, d, e, f) {
 		return {midiUrl: a, midiJSLoaded: b, midiFileLoaded: c, midiError: d, playerInfo: e, piano: f};
 	});
-var _user$project$Main$NoteOff = function (a) {
+var _sh4r3m4n$elm_piano$Main$NoteOff = function (a) {
 	return {ctor: 'NoteOff', _0: a};
 };
-var _user$project$Main$NoteOn = function (a) {
+var _sh4r3m4n$elm_piano$Main$NoteOn = function (a) {
 	return {ctor: 'NoteOn', _0: a};
 };
-var _user$project$Main$PianoEvent = function (a) {
+var _sh4r3m4n$elm_piano$Main$PianoEvent = function (a) {
 	return {ctor: 'PianoEvent', _0: a};
 };
-var _user$project$Main$ChangePlayerStatus = function (a) {
+var _sh4r3m4n$elm_piano$Main$ChangePlayerStatus = function (a) {
 	return {ctor: 'ChangePlayerStatus', _0: a};
 };
-var _user$project$Main$MidiJSLoaded = {ctor: 'MidiJSLoaded'};
-var _user$project$Main$LoadFailed = function (a) {
+var _sh4r3m4n$elm_piano$Main$MidiJSLoaded = {ctor: 'MidiJSLoaded'};
+var _sh4r3m4n$elm_piano$Main$LoadFailed = function (a) {
 	return {ctor: 'LoadFailed', _0: a};
 };
-var _user$project$Main$LoadOK = {ctor: 'LoadOK'};
-var _user$project$Main$subscriptions = function (model) {
+var _sh4r3m4n$elm_piano$Main$LoadOK = {ctor: 'LoadOK'};
+var _sh4r3m4n$elm_piano$Main$subscriptions = function (model) {
 	return _elm_lang$core$Platform_Sub$batch(
 		_elm_lang$core$Native_List.fromArray(
 			[
-				_user$project$Main$midiFileLoaded(
+				_sh4r3m4n$elm_piano$Main$midiFileLoaded(
 				function (_p2) {
-					return _user$project$Main$LoadOK;
+					return _sh4r3m4n$elm_piano$Main$LoadOK;
 				}),
-				_user$project$Main$midiLoadFailed(_user$project$Main$LoadFailed),
-				_user$project$Main$midiJSLoaded(
+				_sh4r3m4n$elm_piano$Main$midiLoadFailed(_sh4r3m4n$elm_piano$Main$LoadFailed),
+				_sh4r3m4n$elm_piano$Main$midiJSLoaded(
 				function (_p3) {
-					return _user$project$Main$MidiJSLoaded;
+					return _sh4r3m4n$elm_piano$Main$MidiJSLoaded;
 				}),
-				_user$project$Main$noteOn(_user$project$Main$NoteOn),
-				_user$project$Main$noteOff(_user$project$Main$NoteOff)
+				_sh4r3m4n$elm_piano$Main$noteOn(_sh4r3m4n$elm_piano$Main$NoteOn),
+				_sh4r3m4n$elm_piano$Main$noteOff(_sh4r3m4n$elm_piano$Main$NoteOff)
 			]));
 };
-var _user$project$Main$LoadMIDI = {ctor: 'LoadMIDI'};
-var _user$project$Main$ChangeUrl = function (a) {
+var _sh4r3m4n$elm_piano$Main$LoadMIDI = {ctor: 'LoadMIDI'};
+var _sh4r3m4n$elm_piano$Main$ChangeUrl = function (a) {
 	return {ctor: 'ChangeUrl', _0: a};
 };
-var _user$project$Main$view = function (model) {
+var _sh4r3m4n$elm_piano$Main$view = function (model) {
 	return model.midiJSLoaded ? A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
@@ -8571,7 +8543,7 @@ var _user$project$Main$view = function (model) {
 				_elm_lang$html$Html$input,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Events$onInput(_user$project$Main$ChangeUrl)
+						_elm_lang$html$Html_Events$onInput(_sh4r3m4n$elm_piano$Main$ChangeUrl)
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[])),
@@ -8579,7 +8551,7 @@ var _user$project$Main$view = function (model) {
 				_elm_lang$html$Html$button,
 				_elm_lang$core$Native_List.fromArray(
 					[
-						_elm_lang$html$Html_Events$onClick(_user$project$Main$LoadMIDI)
+						_elm_lang$html$Html_Events$onClick(_sh4r3m4n$elm_piano$Main$LoadMIDI)
 					]),
 				_elm_lang$core$Native_List.fromArray(
 					[
@@ -8614,14 +8586,14 @@ var _user$project$Main$view = function (model) {
 					[
 						A2(
 						_elm_lang$html$Html_App$map,
-						_user$project$Main$ChangePlayerStatus,
-						_user$project$PlayerController$view(model.playerInfo))
+						_sh4r3m4n$elm_piano$Main$ChangePlayerStatus,
+						_sh4r3m4n$elm_piano$PlayerController$view(model.playerInfo))
 					]) : _elm_lang$core$Native_List.fromArray(
 					[])),
 				A2(
 				_elm_lang$html$Html_App$map,
-				_user$project$Main$PianoEvent,
-				_user$project$Piano$view(model.piano))
+				_sh4r3m4n$elm_piano$Main$PianoEvent,
+				_sh4r3m4n$elm_piano$Piano$view(model.piano))
 			])) : A2(
 		_elm_lang$html$Html$div,
 		_elm_lang$core$Native_List.fromArray(
@@ -8631,14 +8603,14 @@ var _user$project$Main$view = function (model) {
 				_elm_lang$html$Html$text('MIDI.js not loaded')
 			]));
 };
-var _user$project$Main$main = {
+var _sh4r3m4n$elm_piano$Main$main = {
 	main: _elm_lang$html$Html_App$program(
-		{init: _user$project$Main$init, view: _user$project$Main$view, update: _user$project$Main$update, subscriptions: _user$project$Main$subscriptions})
+		{init: _sh4r3m4n$elm_piano$Main$init, view: _sh4r3m4n$elm_piano$Main$view, update: _sh4r3m4n$elm_piano$Main$update, subscriptions: _sh4r3m4n$elm_piano$Main$subscriptions})
 };
 
 var Elm = {};
 Elm['Main'] = Elm['Main'] || {};
-_elm_lang$core$Native_Platform.addPublicModule(Elm['Main'], 'Main', typeof _user$project$Main$main === 'undefined' ? null : _user$project$Main$main);
+_elm_lang$core$Native_Platform.addPublicModule(Elm['Main'], 'Main', typeof _sh4r3m4n$elm_piano$Main$main === 'undefined' ? null : _sh4r3m4n$elm_piano$Main$main);
 
 if (typeof define === "function" && define['amd'])
 {
