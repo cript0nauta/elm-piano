@@ -7,6 +7,7 @@ import Maybe exposing (Maybe(..), withDefault)
 import Set
 import PlayerController
 import Piano
+import Json.Decode -- FIXME Delete when issue #686 of elm-lang/core is solved.
 
 
 main =
@@ -89,7 +90,7 @@ update msg model =
 
     MidiJSLoaded ->
         -- ({model | midiJSLoaded=True}, Cmd.none)
-        ({model | midiJSLoaded=True}, loadMIDI "http://127.0.0.1:5984/midis/midifile_2_1464660997.890725/file.mid")
+        ({model | midiJSLoaded=True}, loadMIDI "midis/cabeza.mid")
 
     ChangePlayerStatus playerMsg ->
         let
