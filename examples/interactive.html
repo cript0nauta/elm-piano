@@ -1,0 +1,41 @@
+
+<body></body>
+<script src="InteractivePiano.js"></script>
+
+<!-- shim -->
+<script src="bower_components/midi/inc/shim/Base64.js" type="text/javascript"></script>
+<script src="bower_components/midi/inc/shim/Base64binary.js" type="text/javascript"></script>
+<script src="bower_components/midi/inc/shim/WebAudioAPI.js" type="text/javascript"></script>
+<script src="bower_components/midi/inc/shim/WebMIDIAPI.js" type="text/javascript"></script>
+<!-- jasmid package -->
+<script src="bower_components/midi/inc/jasmid/stream.js"></script>
+<script src="bower_components/midi/inc/jasmid/midifile.js"></script>
+<script src="bower_components/midi/inc/jasmid/replayer.js"></script>
+<!-- midi.js package -->
+<script src="bower_components/midi/js/midi/audioDetect.js" type="text/javascript"></script>
+<script src="bower_components/midi/js/midi/gm.js" type="text/javascript"></script>
+<script src="bower_components/midi/js/midi/loader.js" type="text/javascript"></script>
+<script src="bower_components/midi/js/midi/plugin.audiotag.js" type="text/javascript"></script>
+<script src="bower_components/midi/js/midi/plugin.webaudio.js" type="text/javascript"></script>
+<script src="bower_components/midi/js/midi/plugin.webmidi.js" type="text/javascript"></script>
+<script src="bower_components/midi/js/midi/player.js" type="text/javascript"></script>
+<script src="bower_components/midi/js/midi/synesthesia.js" type="text/javascript"></script>
+<!-- utils -->
+<script src="bower_components/midi/js/util/dom_request_xhr.js"></script>
+<script src="bower_components/midi/js/util/dom_request_script.js"></script>
+
+<script>
+    var app = Elm.InteractivePiano.fullscreen();
+
+    MIDI.loadPlugin({
+        instrument: "acoustic_grand_piano", // or the instrument code 1 (aka the default)
+        onsuccess: function() { console.log('load success') },
+        soundfontUrl: "bower_components/midi/examples/soundfont/",
+        onsuccess: function(){
+            app.ports.midiJSLoaded.send(null);
+            app.ports.noteOn.subscribe(function(note){MIDI.noteOn(0, note, 127, 0)});
+            app.ports.noteOff.subscribe(function(note){MIDI.noteOff(0, note, 0)});
+        }
+    });
+
+</script>

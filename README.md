@@ -23,6 +23,8 @@ The documentation of this package is available on http://package.elm-lang.org/pa
 
 [Example 1](https://sh4r3m4n.github.io/elm-piano/examples/playmidi.html): Show the notes of a MIDI file
 
+[Example 2](https://sh4r3m4n.github.io/elm-piano/examples/interactive.html): Interactive keyboard with sound. Has some UI issues.
+
 ## Credits
 
 The HTML and CSS of the piano is based on [michaelmp/js-piano][jspiano]

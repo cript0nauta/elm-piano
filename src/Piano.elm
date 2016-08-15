@@ -1,5 +1,5 @@
 module Piano exposing (
-    Model, Msg, Note, initialModel, isNatural, keyboard12Keys,
+    Model, Msg(..), Note, initialModel, isNatural, keyboard12Keys,
     keyboard25Keys, keyboard49Keys, keyboard61Keys, keyboard76Keys,
     keyboard88Keys, noteName, octave, update, view)
 
