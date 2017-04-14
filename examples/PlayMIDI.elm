@@ -1,7 +1,7 @@
 port module PlayMIDI exposing (..)
 
-import Html exposing (..)
-import Html.App as App
+import Html as Html exposing (..)
+import Html exposing (program)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Maybe exposing (Maybe(..), withDefault)
@@ -15,7 +15,7 @@ import Json.Decode
 
 
 main =
-    App.program
+    program
         { init = init
         , view = view
         , update = update
@@ -204,11 +204,11 @@ view model =
             , div [] [ text ("Errors: " ++ (withDefault "No Errors" model.midiError)) ]
             , div []
                 (if model.midiFileLoaded then
-                    [ App.map ChangePlayerStatus <| PlayerController.view model.playerInfo ]
+                    [ Html.map ChangePlayerStatus <| PlayerController.view model.playerInfo ]
                  else
                     []
                 )
-            , App.map PianoEvent (Piano.view model.piano)
+            , Html.map PianoEvent (Piano.view model.piano)
             ]
     else
         div [] [ text "MIDI.js not loaded" ]
