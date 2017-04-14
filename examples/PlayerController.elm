@@ -1,31 +1,42 @@
 module PlayerController exposing (..)
+
 import Html exposing (..)
-import Html.App as App
+import Html exposing (beginnerProgram)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
 
 main =
-  App.beginnerProgram
-    { model = model
-    , view = view
-    , update = update
-    }
+    beginnerProgram
+        { model = model
+        , view = view
+        , update = update
+        }
+
 
 
 -- MODEL
 
-type alias Model = 
-    { status: PlayerStatus
-     }
+
+type alias Model =
+    { status : PlayerStatus
+    }
+
 
 model : Model
-model = Model Stopped
+model =
+    Model Stopped
 
-type PlayerStatus = Playing | Paused | Stopped
+
+type PlayerStatus
+    = Playing
+    | Paused
+    | Stopped
+
 
 
 -- UPDATE
+
 
 type Msg
     = PlayPause
@@ -33,45 +44,52 @@ type Msg
     | Pause
     | Stop
 
+
 update : Msg -> Model -> Model
 update msg model =
     case msg of
         Resume ->
-            { model | status=Playing }
+            { model | status = Playing }
 
         Pause ->
-            { model | status=Paused }
+            { model | status = Paused }
 
         Stop ->
-            { model | status=Stopped }
+            { model | status = Stopped }
 
         PlayPause ->
-            let newStatus =
-                case model.status of
-                    Playing ->
-                        Paused
+            let
+                newStatus =
+                    case model.status of
+                        Playing ->
+                            Paused
 
-                    Paused ->
-                        Playing
+                        Paused ->
+                            Playing
 
-                    other -> other
+                        other ->
+                            other
             in
-                { model | status=newStatus }
-            
-    
+                { model | status = newStatus }
+
+
+
 -- VIEW
+
 
 view : Model -> Html Msg
 view model =
     div []
-        [ button [onClick Stop] [text "Stop"]
-        , playPause model.status ]
+        [ button [ onClick Stop ] [ text "Stop" ]
+        , playPause model.status
+        ]
+
 
 playPause : PlayerStatus -> Html Msg
 playPause status =
     case status of
         Playing ->
-            button [onClick Pause] [text "Pause"]
+            button [ onClick Pause ] [ text "Pause" ]
 
         _ ->
-            button [onClick Resume] [text "Play"]
+            button [ onClick Resume ] [ text "Play" ]
