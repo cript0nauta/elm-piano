@@ -300,7 +300,7 @@ octave note =
     note // 12
 
 
-{-| Return False is note is a flat or sharp, True otherwise
+{-| Return False if note is a flat or a sharp, True otherwise
 -}
 isNatural : Note -> Bool
 isNatural note =
