@@ -11,7 +11,7 @@ import Piano
 import Json.Decode
 
 
--- FIXME Delete when issue #686 of elm-lang/core is solved.
+-- FIXME Delete Json.Decode import when issue #686 of elm-lang/core is solved.
 
 
 main =
