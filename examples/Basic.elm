@@ -51,6 +51,7 @@ init =
                 { p
                     | noteRange = Piano.keyboard61Keys
                     , notes = notes
+                    , interactive = False
                 }
         }
 

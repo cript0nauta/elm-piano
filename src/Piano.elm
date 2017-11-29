@@ -19,16 +19,22 @@ module Piano
 
 {-| A customizable piano component
 
+
 # Model
+
 @docs Model
 @docs initialModel
 @docs Note
 
+
 # Messages and updates
+
 @docs update
 @docs Msg
 
+
 # Keyboard size helpers
+
 @docs keyboard12Keys
 @docs keyboard25Keys
 @docs keyboard49Keys
@@ -36,26 +42,27 @@ module Piano
 @docs keyboard76Keys
 @docs keyboard88Keys
 
+
 # HTML rendering
+
 @docs view
 
+
 # Note helpers
+
 @docs noteName
 @docs isNatural
 @docs octave
 
 -}
 
-import Html exposing (..)
-
-
--- import Html.App as App
-
-import Html.Attributes exposing (..)
-import Html.Events exposing (..)
+import Css exposing (..)
+import Html
+import Html.Styled exposing (..)
+import Html.Styled.Attributes exposing (..)
+import Html.Styled.Events exposing (..)
 import Set
 import String
-import Piano.PianoStyle exposing (css)
 
 
 -- main =
@@ -82,6 +89,7 @@ size.
 
 If debugNotes is True a text will appear, showin the note names of each
 currently pressed note.
+
 -}
 type alias Model =
     { notes : Set.Set Note
@@ -94,7 +102,8 @@ type alias Model =
 
 {-| Represents a note giving its MIDI Note Number
 
-See http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note_numbers_for_octaves.htm for more information
+See <http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note_numbers_for_octaves.htm> for more information
+
 -}
 type alias Note =
     Int
@@ -104,6 +113,7 @@ type alias Note =
 
 Now it starts with no keys being pressed in a 25-key keyboard, in interactive
 mode and with the size selector and the note debugger.
+
 -}
 initialModel : Model
 initialModel =
@@ -198,17 +208,35 @@ update msg model =
 {-| Show the Piano component and, if set in the model, the debug text and the
 keyboard size changer.
 -}
-view : Model -> Html Msg
+view : Model -> Html.Html Msg
 view model =
     let
         container inner =
-            div [ class "piano" ]
-                [ div [ class "piano-container" ]
-                    [ div [ class "piano-keys" ] inner ]
+            div
+                [ css
+                    [ padding (px 5)
+                    , margin2 (px 0) auto
+                    ]
                 ]
-
-        myStyle =
-            node "style" [] [ text css ]
+                [ div
+                    [ css
+                        [ textAlign center
+                        , borderRadius (px 5)
+                        , margin (px 5)
+                        , padding (px 5)
+                        , whiteSpace noWrap
+                        ]
+                    ]
+                    [ div
+                        [ css
+                            [ letterSpacing (px 0)
+                            , fontSize (px 0)
+                            , Css.property "word-spacing" "0"
+                            ]
+                        ]
+                        inner
+                    ]
+                ]
 
         range =
             List.range (Tuple.first model.noteRange) (Tuple.second model.noteRange)
@@ -249,8 +277,7 @@ view model =
                 []
     in
         span [ style [ ( "text-align", "center" ) ] ]
-            ([ myStyle
-             , container <|
+            ([ container <|
                 List.map2 viewKey
                     range
                     (List.map (flip Set.member model.notes) range)
@@ -258,35 +285,81 @@ view model =
                 ++ debugNotes
                 ++ sizeSelector
             )
+            |> toUnstyled
 
 
 {-| Helper function to render a single note
 -}
 viewKey : Note -> Bool -> Html Msg
 viewKey note active =
-    if isNatural note then
-        div
-            [ classList
-                [ ( "piano-white", True )
-                , ( "pressed", active )
+    let
+        blackWhiteStyle : Style
+        blackWhiteStyle =
+            Css.batch
+                [ display inlineBlock
+                , position relative
+                , verticalAlign top
+                , Css.property "direction" "ltr"
+                , margin zero
+                , padding zero
                 ]
-            , onMouseDown (KeyDown note)
-            , onMouseUp (KeyUp note)
-            ]
-            []
-    else
-        div
-            [ class "piano-black" ]
-            [ div
-                [ classList
-                    [ ( "piano-black-raised", True )
-                    , ( "pressed", active )
+
+        colorIfActive : Color -> Style
+        colorIfActive color =
+            if active then
+                backgroundColor color
+            else
+                Css.batch []
+
+        keysBoderStyle : Style
+        -- It was .piano-white .piano-black-raised
+        keysBoderStyle =
+            Css.batch
+                [ borderRadius (px 2)
+                , borderColor (hex "222")
+                , borderStyle solid
+                , borderWidth4 (px 1) (px 1) (px 1) (px 1)
+                ]
+    in
+        if isNatural note then
+            div
+                [ css
+                    [ blackWhiteStyle
+                    , colorIfActive (hex "#88FFAA")
+                    , keysBoderStyle
+                    , Css.width (px 24)
+                    , Css.height (px 100)
+                    , backgroundColor (hex "#FFFFFF")
+                    , zIndex (int 1)
                     ]
                 , onMouseDown (KeyDown note)
                 , onMouseUp (KeyUp note)
                 ]
                 []
-            ]
+        else
+            div
+                [ css
+                    [ blackWhiteStyle
+                    , Css.width zero
+                    , Css.height zero
+                    , zIndex (int 2)
+                    ]
+                ]
+                [ div
+                    [ css
+                        [ Css.width (px 16)
+                        , Css.height (px 70)
+                        , position relative
+                        , left (px (-10))
+                        , backgroundColor (hex "000000")
+                        , colorIfActive (hex "55AA55")
+                        , keysBoderStyle
+                        ]
+                    , onMouseDown (KeyDown note)
+                    , onMouseUp (KeyUp note)
+                    ]
+                    []
+                ]
 
 
 
