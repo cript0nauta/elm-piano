@@ -3,6 +3,9 @@ module Piano
         ( Model
         , Msg(..)
         , Note
+        , allNotes
+        , colorAllPressedKeys
+        , colorAllUnpressedKeys
         , initialModel
         , isNatural
         , keyboard12Keys
@@ -24,7 +27,10 @@ module Piano
 
 @docs Model
 @docs initialModel
+@docs colorAllUnpressedKeys
+@docs colorAllPressedKeys
 @docs Note
+@docs allNotes
 
 
 # Messages and updates
@@ -57,6 +63,8 @@ module Piano
 -}
 
 import Css exposing (..)
+import Color
+import Dict
 import Html
 import Html.Styled exposing (..)
 import Html.Styled.Attributes exposing (..)
@@ -97,6 +105,8 @@ type alias Model =
     , interactive : Bool
     , showSizeSelector : Bool
     , debugNotes : Bool
+    , pressedKeyColors : Dict.Dict Note Color.Color
+    , unpressedKeyColors : Dict.Dict Note Color.Color
     }
 
 
@@ -107,6 +117,13 @@ See <http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note
 -}
 type alias Note =
     Int
+
+
+{-| TODO document
+-}
+allNotes : List Note
+allNotes =
+    List.range 0 127
 
 
 {-| Common initial configuration for the component
@@ -122,7 +139,38 @@ initialModel =
     , interactive = True
     , showSizeSelector = True
     , debugNotes = True
+    , pressedKeyColors = Dict.empty
+    , unpressedKeyColors = Dict.empty
     }
+
+
+colorKeys : Color.Color -> Color.Color -> Dict.Dict Note Color.Color
+colorKeys white black =
+    allNotes
+        |> List.map
+            (\n ->
+                ( n
+                , if isNatural n then
+                    white
+                  else
+                    black
+                )
+            )
+        |> Dict.fromList
+
+
+{-| TODO document
+-}
+colorAllPressedKeys : Color.Color -> Color.Color -> Model -> Model
+colorAllPressedKeys white black model =
+    { model | pressedKeyColors = colorKeys white black }
+
+
+{-| TODO document
+-}
+colorAllUnpressedKeys : Color.Color -> Color.Color -> Model -> Model
+colorAllUnpressedKeys white black model =
+    { model | unpressedKeyColors = colorKeys white black }
 
 
 {-| Note range of a 12-key keyboard
@@ -275,12 +323,38 @@ view model =
                 ]
             else
                 []
+
+        -- Convert from a native Color to a elm-css Color
+        nativeColorToCss : Color.Color -> Color
+        nativeColorToCss c =
+            let
+                { red, green, blue, alpha } =
+                    Color.toRgb c
+            in
+                rgba red green blue alpha
     in
         span [ style [ ( "text-align", "center" ) ] ]
             ([ container <|
-                List.map2 viewKey
+                List.map
+                    (\note ->
+                        let
+                            active =
+                                (Set.member note model.notes)
+
+                            colorDict =
+                                (if active then
+                                    model.pressedKeyColors
+                                 else
+                                    model.unpressedKeyColors
+                                )
+                        in
+                            viewKey note
+                                (Dict.get note colorDict
+                                    |> Maybe.map nativeColorToCss
+                                )
+                                active
+                    )
                     range
-                    (List.map (flip Set.member model.notes) range)
              ]
                 ++ debugNotes
                 ++ sizeSelector
@@ -290,8 +364,8 @@ view model =
 
 {-| Helper function to render a single note
 -}
-viewKey : Note -> Bool -> Html Msg
-viewKey note active =
+viewKey : Note -> Maybe Color -> Bool -> Html Msg
+viewKey note color active =
     let
         blackWhiteStyle : Style
         blackWhiteStyle =
@@ -304,13 +378,6 @@ viewKey note active =
                 , padding zero
                 ]
 
-        colorIfActive : Color -> Style
-        colorIfActive color =
-            if active then
-                backgroundColor color
-            else
-                Css.batch []
-
         keysBoderStyle : Style
         -- It was .piano-white .piano-black-raised
         keysBoderStyle =
@@ -320,16 +387,28 @@ viewKey note active =
                 , borderStyle solid
                 , borderWidth4 (px 1) (px 1) (px 1) (px 1)
                 ]
+
+        defaultColor =
+            if isNatural note then
+                if active then
+                    hex "#88FFAA"
+                else
+                    hex "#FFFFFF"
+            else if active then
+                hex "#55AA55"
+            else
+                hex "#000000"
     in
         if isNatural note then
             div
                 [ css
                     [ blackWhiteStyle
-                    , colorIfActive (hex "#88FFAA")
                     , keysBoderStyle
                     , Css.width (px 24)
                     , Css.height (px 100)
-                    , backgroundColor (hex "#FFFFFF")
+                    , color
+                        |> Maybe.withDefault defaultColor
+                        |> backgroundColor
                     , zIndex (int 1)
                     ]
                 , onMouseDown (KeyDown note)
@@ -351,8 +430,9 @@ viewKey note active =
                         , Css.height (px 70)
                         , position relative
                         , left (px (-10))
-                        , backgroundColor (hex "000000")
-                        , colorIfActive (hex "55AA55")
+                        , color
+                            |> Maybe.withDefault defaultColor
+                            |> backgroundColor
                         , keysBoderStyle
                         ]
                     , onMouseDown (KeyDown note)

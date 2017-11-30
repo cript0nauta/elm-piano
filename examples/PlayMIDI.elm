@@ -1,19 +1,17 @@
 port module PlayMIDI exposing (..)
 
+import Color
+import Dict
 import Html as Html exposing (..)
 import Html exposing (program)
-import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Maybe exposing (Maybe(..), withDefault)
 import Set
 import PlayerController
 import Piano
-import Json.Decode
 
 
--- FIXME Delete Json.Decode import when issue #686 of elm-lang/core is solved.
-
-
+main : Program Never Model Msg
 main =
     program
         { init = init
@@ -34,6 +32,7 @@ type alias Model =
     , midiError : Maybe String
     , playerInfo : PlayerController.Model
     , piano : Piano.Model
+    , colored : Bool
     }
 
 
@@ -45,6 +44,7 @@ init =
             , midiJSLoaded = False
             , midiFileLoaded = False
             , midiError = (Just "Not loaded")
+            , colored = True
             , playerInfo = PlayerController.model
             , piano =
                 -- I have to do this due to compiler restrictions
@@ -55,12 +55,68 @@ init =
                         Piano.initialModel
                 in
                     { p
-                        | noteRange = Piano.keyboard61Keys
+                        | noteRange = Piano.keyboard88Keys
                         , interactive = False
                     }
+                        |> setPianoColors True
             }
     in
         ( model, Cmd.none )
+
+
+{-| Given a list of keys, color them to make them look like a color wheel.
+Returns a dict compatible with the Piano input
+-}
+colorWheelKeys : Float -> Float -> List Piano.Note -> Dict.Dict Piano.Note Color.Color
+colorWheelKeys saturation lightness l =
+    let
+        setColor : Int -> Int -> Piano.Note -> ( Piano.Note, Color.Color )
+        setColor max i note =
+            let
+                hue =
+                    (pi * 2 * toFloat i / toFloat max)
+
+                color =
+                    Color.hsl hue saturation lightness
+            in
+                ( note, color )
+    in
+        l
+            |> List.indexedMap (setColor (List.length l))
+            |> Dict.fromList
+
+
+setPianoColors : Bool -> Piano.Model -> Piano.Model
+setPianoColors colored piano =
+    let
+        pressedKeyColors =
+            if colored then
+                -- Color all pressed notes with higher saturation colors
+                Piano.allNotes
+                    -- |> List.filter Piano.isNatural
+                    |> colorWheelKeys 1 0.8
+            else
+                .pressedKeyColors Piano.initialModel
+
+        unpressedKeyColors =
+            if colored then
+                -- Color only white keys, leave the black ones black
+                Piano.allNotes
+                    |> List.filter Piano.isNatural
+                    |> colorWheelKeys 0.3 0.5
+                -- |> Dict.union
+                --     -- Color black keys
+                --     (Piano.allNotes
+                --         |> List.filter (not << Piano.isNatural)
+                --         |> colorWheelKeys 0.2 0.4
+                --     )
+            else
+                .pressedKeyColors Piano.initialModel
+    in
+        { piano
+            | pressedKeyColors = pressedKeyColors
+            , unpressedKeyColors = unpressedKeyColors
+        }
 
 
 
@@ -77,6 +133,7 @@ type Msg
     | PianoEvent Piano.Msg
     | NoteOn Int
     | NoteOff Int
+    | ToggleColored
 
 
 port loadMIDI : String -> Cmd msg
@@ -152,6 +209,10 @@ update msg model =
             in
                 ( { model | piano = newPiano }, Cmd.none )
 
+        ToggleColored ->
+            { model | colored = not model.colored
+            , piano = setPianoColors (not model.colored) model.piano} ! []
+
 
 
 -- SUBSCRIPTIONS
@@ -192,7 +253,18 @@ view model =
     if model.midiJSLoaded then
         div []
             [ input [ onInput ChangeUrl ] []
-            , button [ onClick LoadMIDI ] [ text "Cargar" ]
+            , button [ onClick LoadMIDI ] [ text "Load MIDI file" ]
+            , button
+                [ onClick ToggleColored ]
+                [ text
+                    ((if model.colored then
+                        "Disable"
+                      else
+                        "Enable"
+                     )
+                        ++ " colored keyboard"
+                    )
+                ]
             , div []
                 [ text
                     (if model.midiFileLoaded then

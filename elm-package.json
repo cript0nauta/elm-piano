@@ -8,8 +8,7 @@
         "examples"
     ],
     "exposed-modules": [
-        "Piano",
-        "Piano.PianoStyle"
+        "Piano"
     ],
     "dependencies": {
         "elm-lang/core": "5.1.1 <= v < 6.0.0",
