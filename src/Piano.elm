@@ -129,7 +129,7 @@ allNotes =
 {-| Common initial configuration for the component
 
 Now it starts with no keys being pressed in a 25-key keyboard, in interactive
-mode and with the size selector and the note debugger.
+mode and without the size selector nor the note debugger.
 
 -}
 initialModel : Model
@@ -137,8 +137,8 @@ initialModel =
     { notes = Set.empty
     , noteRange = keyboard25Keys
     , interactive = True
-    , showSizeSelector = True
-    , debugNotes = True
+    , showSizeSelector = False
+    , debugNotes = False
     , pressedKeyColors = Dict.empty
     , unpressedKeyColors = Dict.empty
     }

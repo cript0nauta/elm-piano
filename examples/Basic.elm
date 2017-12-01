@@ -1,4 +1,4 @@
-port module PlayMIDI exposing (..)
+module Basic exposing (..)
 
 import Html exposing (..)
 import Set
@@ -52,6 +52,8 @@ init =
                     | noteRange = Piano.keyboard61Keys
                     , notes = notes
                     , interactive = False
+                    , debugNotes = True
+                    , showSizeSelector = True
                 }
         }
 

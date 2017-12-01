@@ -35,7 +35,20 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    Model False Piano.initialModel ! []
+    let
+        p =
+            Piano.initialModel
+
+        piano =
+            { p
+                | debugNotes = True
+                , showSizeSelector = True
+            }
+    in
+        Model
+            False
+            piano
+            ! []
 
 
 

@@ -57,6 +57,8 @@ init =
                     { p
                         | noteRange = Piano.keyboard88Keys
                         , interactive = False
+                        , debugNotes = True
+                        , showSizeSelector = True
                     }
                         |> setPianoColors True
             }
@@ -210,8 +212,11 @@ update msg model =
                 ( { model | piano = newPiano }, Cmd.none )
 
         ToggleColored ->
-            { model | colored = not model.colored
-            , piano = setPianoColors (not model.colored) model.piano} ! []
+            { model
+                | colored = not model.colored
+                , piano = setPianoColors (not model.colored) model.piano
+            }
+                ! []
 
 
 
