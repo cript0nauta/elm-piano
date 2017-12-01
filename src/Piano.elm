@@ -39,15 +39,6 @@ module Piano
 @docs Msg
 
 
-# Keyboard size helpers
-
-@docs keyboard12Keys
-@docs keyboard25Keys
-@docs keyboard49Keys
-@docs keyboard61Keys
-@docs keyboard76Keys
-@docs keyboard88Keys
-
 
 # HTML rendering
 
@@ -60,6 +51,15 @@ module Piano
 @docs isNatural
 @docs octave
 
+
+# Keyboard size helpers
+
+@docs keyboard12Keys
+@docs keyboard25Keys
+@docs keyboard49Keys
+@docs keyboard61Keys
+@docs keyboard76Keys
+@docs keyboard88Keys
 -}
 
 import Css exposing (..)
@@ -86,7 +86,7 @@ import String
 
 notes is the set of currently pressed notes.
 
-noteRange determines the first and last notes of the keyboard.
+noteRange determines the first and last notes shown in keyboard.
 
 If interactive is True, the component will generate KeyUp and KeyDown messages
 when the user clicks on a note. (Now this mode is experimental and has some
@@ -95,8 +95,12 @@ UI issues).
 If showSizeSelector is True a button group will be shown to select the keyboard
 size.
 
-If debugNotes is True a text will appear, showin the note names of each
+If debugNotes is True a text will appear, showing the note names of each
 currently pressed note.
+
+pressedKeyColors and unpressedKeyColors are dictionaries that override the
+default color of the keys when they are, respectively, pressed or unpressed,
+so they allow the user to specify custom colors for each keys
 
 -}
 type alias Model =
@@ -119,7 +123,7 @@ type alias Note =
     Int
 
 
-{-| TODO document
+{-| A list with all valid MIDI notes
 -}
 allNotes : List Note
 allNotes =
@@ -159,14 +163,22 @@ colorKeys white black =
         |> Dict.fromList
 
 
-{-| TODO document
+{-| Does the same that colorAllUnpressedKeys, but sets the color of the
+pressed keys instead
 -}
 colorAllPressedKeys : Color.Color -> Color.Color -> Model -> Model
 colorAllPressedKeys white black model =
     { model | pressedKeyColors = colorKeys white black }
 
 
-{-| TODO document
+{-| Update a Piano model by setting the color of all the unpressed keys.
+
+It takes as parameter the desired color of the white and the black keys, in
+that order.
+
+Notice that if more keys are pressed after calling the function, the new keys
+will also have this color, so there is no need of calling this function on
+every update.
 -}
 colorAllUnpressedKeys : Color.Color -> Color.Color -> Model -> Model
 colorAllUnpressedKeys white black model =
