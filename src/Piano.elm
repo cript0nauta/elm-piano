@@ -39,7 +39,6 @@ module Piano
 @docs Msg
 
 
-
 # HTML rendering
 
 @docs view
@@ -60,6 +59,7 @@ module Piano
 @docs keyboard61Keys
 @docs keyboard76Keys
 @docs keyboard88Keys
+
 -}
 
 import Css exposing (..)
@@ -179,6 +179,7 @@ that order.
 Notice that if more keys are pressed after calling the function, the new keys
 will also have this color, so there is no need of calling this function on
 every update.
+
 -}
 colorAllUnpressedKeys : Color.Color -> Color.Color -> Model -> Model
 colorAllUnpressedKeys white black model =
@@ -240,7 +241,11 @@ type Msg
     | ChangeNoteRange ( Int, Int )
 
 
-{-| Handle the messages by updating model.notes or model.noteRange
+{-| Handle the messages by updating model.notes or model.noteRange.
+
+You won't need to use this if you are using a non interactive
+keyboard without the keyboard size selector
+
 -}
 update : Msg -> Model -> Model
 update msg model =
