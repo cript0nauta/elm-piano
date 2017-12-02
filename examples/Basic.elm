@@ -1,6 +1,7 @@
 module Basic exposing (..)
 
 import Html exposing (..)
+import Color
 import Set
 import Piano
 
@@ -47,13 +48,15 @@ init =
             let
                 p =
                     Piano.initialModel
+                        |> Piano.colorAllPressedKeys
+                            Color.lightOrange
+                            Color.darkOrange
             in
                 { p
                     | noteRange = Piano.keyboard61Keys
                     , notes = notes
                     , interactive = False
                     , debugNotes = True
-                    , showSizeSelector = True
                 }
         }
 
@@ -63,14 +66,14 @@ init =
 
 
 type Msg
-    = PianoEvent Piano.Msg
+    = NoOp
 
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        PianoEvent pianoMsg ->
-            { model | piano = Piano.update pianoMsg model.piano }
+        NoOp ->
+            model
 
 
 
@@ -80,5 +83,5 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ Html.map PianoEvent (Piano.view model.piano)
+        [ Html.map (always NoOp) (Piano.view model.piano)
         ]
