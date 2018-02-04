@@ -1,23 +1,25 @@
 module Piano
     exposing
-        ( Model
-        , Msg(..)
+        ( Msg
         , Note
-        , allNotes
+        , Config
+        , config
+        , State
+        , initialState
+        , setNotes
+        , view
         , colorAllPressedKeys
         , colorAllUnpressedKeys
-        , initialModel
         , isNatural
+        , noteName
+        , octave
+        , allNotes
         , keyboard12Keys
         , keyboard25Keys
         , keyboard49Keys
         , keyboard61Keys
         , keyboard76Keys
         , keyboard88Keys
-        , noteName
-        , octave
-        , update
-        , view
         )
 
 {-| A customizable piano component
@@ -25,8 +27,6 @@ module Piano
 
 # Model
 
-@docs Model
-@docs initialModel
 @docs colorAllUnpressedKeys
 @docs colorAllPressedKeys
 @docs Note
@@ -35,7 +35,6 @@ module Piano
 
 # Messages and updates
 
-@docs update
 @docs Msg
 
 
@@ -59,6 +58,15 @@ module Piano
 @docs keyboard61Keys
 @docs keyboard76Keys
 @docs keyboard88Keys
+
+
+# TODO doc
+
+@docs Config
+@docs initialState
+@docs setNotes
+@docs State
+@docs config
 
 -}
 
@@ -146,6 +154,54 @@ initialModel =
     , pressedKeyColors = Dict.empty
     , unpressedKeyColors = Dict.empty
     }
+
+
+{-| TODO
+-}
+type Config msg
+    = Config (ConfigInternal msg)
+
+
+type alias ConfigInternal msg =
+    { noteRange : ( Note, Note )
+    , pressedKeyColors : Dict.Dict Note Color.Color
+    , unpressedKeyColors : Dict.Dict Note Color.Color
+    , update : Maybe (Msg -> msg)
+    }
+
+
+{-| TODO
+-}
+config : ( Note, Note ) -> Config msg
+config noteRange =
+    Config <|
+        ConfigInternal
+            noteRange
+            Dict.empty
+            Dict.empty
+            Nothing
+
+
+{-| TODO
+-}
+type State
+    = State
+        { notes : Set.Set Note
+        }
+
+
+{-| TODO
+-}
+initialState : State
+initialState =
+    State { notes = Set.empty }
+
+
+{-| TODO
+-}
+setNotes : Set.Set Note -> State -> State
+setNotes notes _ =
+    State { notes = notes }
 
 
 colorKeys : Color.Color -> Color.Color -> Dict.Dict Note Color.Color
@@ -273,8 +329,8 @@ update msg model =
 {-| Show the Piano component and, if set in the model, the debug text and the
 keyboard size changer.
 -}
-view : Model -> Html.Html Msg
-view model =
+view : Config msg -> State -> Html.Html msg
+view (Config config) (State { notes }) =
     let
         container inner =
             div
@@ -304,43 +360,43 @@ view model =
                 ]
 
         range =
-            List.range (Tuple.first model.noteRange) (Tuple.second model.noteRange)
+            List.range (Tuple.first config.noteRange) (Tuple.second config.noteRange)
 
-        sizeSelector =
-            if model.showSizeSelector then
-                let
-                    keyboardOption size =
-                        let
-                            keys =
-                                Tuple.second size - Tuple.first size + 1
-                        in
-                            button [ onClick (ChangeNoteRange size) ]
-                                [ text (toString keys ++ "-key piano") ]
-                in
-                    List.map keyboardOption
-                        [ keyboard12Keys
-                        , keyboard25Keys
-                        , keyboard49Keys
-                        , keyboard61Keys
-                        , keyboard76Keys
-                        , keyboard88Keys
-                        ]
-                        |> List.intersperse (br [] [])
-            else
-                []
-
-        debugNotes =
-            if model.debugNotes then
-                [ div []
-                    [ text <|
-                        "Currently pressed notes: "
-                            ++ String.join ", "
-                                (model.notes |> Set.toList |> List.map noteName)
-                    ]
-                ]
-            else
-                []
-
+        -- sizeSelector =
+        --     if model.showSizeSelector then
+        --         let
+        --             keyboardOption size =
+        --                 let
+        --                     keys =
+        --                         Tuple.second size - Tuple.first size + 1
+        --                 in
+        --                     button [ onClick (ChangeNoteRange size) ]
+        --                         [ text (toString keys ++ "-key piano") ]
+        --         in
+        --             List.map keyboardOption
+        --                 [ keyboard12Keys
+        --                 , keyboard25Keys
+        --                 , keyboard49Keys
+        --                 , keyboard61Keys
+        --                 , keyboard76Keys
+        --                 , keyboard88Keys
+        --                 ]
+        --                 |> List.intersperse (br [] [])
+        --     else
+        --         []
+        --
+        -- debugNotes =
+        --     if model.debugNotes then
+        --         [ div []
+        --             [ text <|
+        --                 "Currently pressed notes: "
+        --                     ++ String.join ", "
+        --                         (model.notes |> Set.toList |> List.map noteName)
+        --             ]
+        --         ]
+        --     else
+        --         []
+        --
         -- Convert from a native Color to a elm-css Color
         nativeColorToCss : Color.Color -> Color
         nativeColorToCss c =
@@ -356,16 +412,18 @@ view model =
                     (\note ->
                         let
                             active =
-                                (Set.member note model.notes)
+                                (Set.member note notes)
 
                             colorDict =
                                 (if active then
-                                    model.pressedKeyColors
+                                    config.pressedKeyColors
                                  else
-                                    model.unpressedKeyColors
+                                    config.unpressedKeyColors
                                 )
                         in
-                            viewKey note
+                            viewKey
+                                config
+                                note
                                 (Dict.get note colorDict
                                     |> Maybe.map nativeColorToCss
                                 )
@@ -373,16 +431,14 @@ view model =
                     )
                     range
              ]
-                ++ debugNotes
-                ++ sizeSelector
             )
             |> toUnstyled
 
 
 {-| Helper function to render a single note
 -}
-viewKey : Note -> Maybe Color -> Bool -> Html Msg
-viewKey note color active =
+viewKey : ConfigInternal msg -> Note -> Maybe Color -> Bool -> Html msg
+viewKey config note color active =
     let
         blackWhiteStyle : Style
         blackWhiteStyle =
@@ -418,19 +474,23 @@ viewKey note color active =
     in
         if isNatural note then
             div
-                [ css
-                    [ blackWhiteStyle
-                    , keysBoderStyle
-                    , Css.width (px 24)
-                    , Css.height (px 100)
-                    , color
-                        |> Maybe.withDefault defaultColor
-                        |> backgroundColor
-                    , zIndex (int 1)
-                    ]
-                , onMouseDown (KeyDown note)
-                , onMouseUp (KeyUp note)
-                ]
+                (List.singleton
+                    (css
+                        [ blackWhiteStyle
+                        , keysBoderStyle
+                        , Css.width (px 24)
+                        , Css.height (px 100)
+                        , color
+                            |> Maybe.withDefault defaultColor
+                            |> backgroundColor
+                        , zIndex (int 1)
+                        ]
+                    )
+                    |> event config onMouseDown (KeyDown note)
+                    |> event config
+                        onMouseUp
+                        (KeyUp note)
+                )
                 []
         else
             div
@@ -442,21 +502,33 @@ viewKey note color active =
                     ]
                 ]
                 [ div
-                    [ css
-                        [ Css.width (px 16)
-                        , Css.height (px 70)
-                        , position relative
-                        , left (px (-10))
-                        , color
-                            |> Maybe.withDefault defaultColor
-                            |> backgroundColor
-                        , keysBoderStyle
-                        ]
-                    , onMouseDown (KeyDown note)
-                    , onMouseUp (KeyUp note)
-                    ]
+                    (List.singleton
+                        (css
+                            [ Css.width (px 16)
+                            , Css.height (px 70)
+                            , position relative
+                            , left (px (-10))
+                            , color
+                                |> Maybe.withDefault defaultColor
+                                |> backgroundColor
+                            , keysBoderStyle
+                            ]
+                        )
+                        |> event config onMouseDown (KeyDown note)
+                        |> event config onMouseUp (KeyUp note)
+                    )
                     []
                 ]
+
+
+event : ConfigInternal msg -> (msg -> Attribute msg) -> Msg -> List (Attribute msg) -> List (Attribute msg)
+event { update } f internalMsg attrs =
+    case update of
+        Just wrapperMsg ->
+            (f <| (wrapperMsg internalMsg)) :: attrs
+
+        Nothing ->
+            attrs
 
 
 
