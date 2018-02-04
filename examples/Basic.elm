@@ -44,14 +44,15 @@ model =
 
 
 
--- TODO
--- |> Piano.colorAllPressedKeys
---     Color.lightOrange
---     Color.darkOrange
---
 -- VIEW
 
 
 view : Model -> Html msg
 view { pianoState } =
-    Piano.view (Piano.config Piano.keyboard88Keys) pianoState
+    let
+        pianoConfig : Piano.Config msg
+        pianoConfig =
+            Piano.config Piano.keyboard88Keys
+                |> Piano.colorAllPressedKeys Color.lightOrange Color.darkOrange
+    in
+        Piano.view pianoConfig pianoState

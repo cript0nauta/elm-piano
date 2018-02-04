@@ -222,9 +222,9 @@ colorKeys white black =
 {-| Does the same that colorAllUnpressedKeys, but sets the color of the
 pressed keys instead
 -}
-colorAllPressedKeys : Color.Color -> Color.Color -> Model -> Model
-colorAllPressedKeys white black model =
-    { model | pressedKeyColors = colorKeys white black }
+colorAllPressedKeys : Color.Color -> Color.Color -> Config msg -> Config msg
+colorAllPressedKeys white black (Config config) =
+    Config { config | pressedKeyColors = colorKeys white black }
 
 
 {-| Update a Piano model by setting the color of all the unpressed keys.
@@ -237,9 +237,9 @@ will also have this color, so there is no need of calling this function on
 every update.
 
 -}
-colorAllUnpressedKeys : Color.Color -> Color.Color -> Model -> Model
-colorAllUnpressedKeys white black model =
-    { model | unpressedKeyColors = colorKeys white black }
+colorAllUnpressedKeys : Color.Color -> Color.Color -> Config msg -> Config msg
+colorAllUnpressedKeys white black (Config config) =
+    Config { config | unpressedKeyColors = colorKeys white black }
 
 
 {-| Note range of a 12-key keyboard
