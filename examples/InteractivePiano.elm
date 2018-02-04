@@ -68,20 +68,25 @@ update msg model =
             { model | midiJSLoaded = True } ! []
 
         PianoEvent pianoMsg ->
-            -- let
-            --     cmd =
-            --         case pianoMsg of
-            --             Piano.KeyUp note ->
-            --                 noteOff note
-            --             Piano.KeyDown note ->
-            --                 noteOn note
-            --             _ ->
-            --                 Cmd.none
-            -- in
-            --     ( { model | piano = Piano.update pianoMsg model.piano }, cmd )
-            ( { model | pianoState = Piano.update pianoMsg model.pianoState }
-            , Cmd.none
-            )
+            let
+                ( pianoState, keys ) =
+                    Piano.update pianoMsg model.pianoState
+
+                noteOnCmds : List (Cmd msg)
+                noteOnCmds =
+                    Piano.newKeys keys
+                        |> Set.toList
+                        |> List.map noteOn
+
+                noteOffCmds : List (Cmd msg)
+                noteOffCmds =
+                    Piano.releasedKeys keys
+                        |> Set.toList
+                        |> List.map noteOff
+            in
+                ( { model | pianoState = pianoState }
+                , Cmd.batch (noteOnCmds ++ noteOffCmds)
+                )
 
         ChangePianoSize size ->
             ( { model | pianoSize = size }

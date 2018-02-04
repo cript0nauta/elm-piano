@@ -5,6 +5,10 @@ module Piano
         , Config
         , config
         , State
+        , CurrentKeys
+        , pressedKeys
+        , newKeys
+        , releasedKeys
         , initialState
         , setNotes
         , interactive
@@ -71,6 +75,10 @@ module Piano
 @docs config
 @docs update
 @docs interactive
+@docs CurrentKeys
+@docs pressedKeys
+@docs newKeys
+@docs releasedKeys
 
 -}
 
@@ -81,7 +89,7 @@ import Html
 import Html.Styled exposing (..)
 import Html.Styled.Attributes exposing (..)
 import Html.Styled.Events exposing (..)
-import Set
+import Set exposing (Set)
 import String
 
 
@@ -116,7 +124,7 @@ so they allow the user to specify custom colors for each keys
 
 -}
 type alias Model =
-    { notes : Set.Set Note
+    { notes : Set Note
     , noteRange : ( Note, Note )
     , interactive : Bool
     , showSizeSelector : Bool
@@ -197,7 +205,7 @@ interactive f (Config config) =
 -}
 type State
     = State
-        { notes : Set.Set Note
+        { notes : Set Note
         }
 
 
@@ -210,7 +218,7 @@ initialState =
 
 {-| TODO
 -}
-setNotes : Set.Set Note -> State -> State
+setNotes : Set Note -> State -> State
 setNotes notes _ =
     State { notes = notes }
 
@@ -307,14 +315,62 @@ type Msg
     | KeyDown Note
 
 
+{-| TODO
+-}
+type
+    CurrentKeys
+    -- TODO: write integration tests for this data structure
+    = CurrentKeys
+        { old : Set Note
+        , new : Set Note
+        }
+
+
+{-| TODO
+-}
+pressedKeys : CurrentKeys -> Set Note
+pressedKeys (CurrentKeys { new }) =
+    new
+
+
+{-| TODO
+-}
+newKeys : CurrentKeys -> Set Note
+newKeys (CurrentKeys { old, new }) =
+    Set.diff new old
+
+
+{-| TODO
+-}
+releasedKeys : CurrentKeys -> Set Note
+releasedKeys (CurrentKeys { old, new }) =
+    Set.diff old new
+
+
 {-| Handle the messages by updating model.notes or model.noteRange.
 
 You won't need to use this if you are using a non interactive
 keyboard without the keyboard size selector
 
 -}
-update : Msg -> State -> State
-update msg (State { notes }) =
+update : Msg -> State -> ( State, CurrentKeys )
+update msg (State oldState) =
+    let
+        toTuple : State -> ( State, CurrentKeys )
+        toTuple (State newState) =
+            ( State newState
+            , CurrentKeys
+                { old = (oldState.notes)
+                , new = (newState.notes)
+                }
+            )
+    in
+        toTuple <|
+            updateInternal msg (State oldState)
+
+
+updateInternal : Msg -> State -> State
+updateInternal msg (State { notes }) =
     case msg of
         KeyUp note ->
             State { notes = Set.remove note notes }
