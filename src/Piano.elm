@@ -11,6 +11,7 @@ module Piano
         , releasedKeys
         , initialState
         , setNotes
+        , getNotes
         , interactive
         , update
         , view
@@ -71,6 +72,7 @@ module Piano
 @docs Config
 @docs initialState
 @docs setNotes
+@docs getNotes
 @docs State
 @docs config
 @docs update
@@ -221,6 +223,13 @@ initialState =
 setNotes : Set Note -> State -> State
 setNotes notes _ =
     State { notes = notes }
+
+
+{-| TODO
+-}
+getNotes : State -> Set Note
+getNotes (State { notes }) =
+    notes
 
 
 colorKeys : Color.Color -> Color.Color -> Dict.Dict Note Color.Color
@@ -419,18 +428,6 @@ view (Config config) (State { notes }) =
         range =
             List.range (Tuple.first config.noteRange) (Tuple.second config.noteRange)
 
-        -- debugNotes =
-        --     if model.debugNotes then
-        --         [ div []
-        --             [ text <|
-        --                 "Currently pressed notes: "
-        --                     ++ String.join ", "
-        --                         (model.notes |> Set.toList |> List.map noteName)
-        --             ]
-        --         ]
-        --     else
-        --         []
-        --
         -- Convert from a native Color to a elm-css Color
         nativeColorToCss : Color.Color -> Color
         nativeColorToCss c =

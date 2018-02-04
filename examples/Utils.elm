@@ -1,6 +1,8 @@
 module Utils exposing (..)
 
+import Set
 import Html exposing (..)
+import Html.Attributes exposing (style)
 import Html.Events exposing (onClick)
 import Piano exposing (..)
 
@@ -26,3 +28,14 @@ sizeSelector msg =
             ]
             |> List.intersperse (br [] [])
             |> div []
+
+
+debugNotes : State -> Html msg
+debugNotes state =
+    div
+        [ style [ ( "text-align", "center" ) ] ]
+        [ text <|
+            "Currently pressed notes: "
+                ++ String.join ", "
+                    (getNotes state |> Set.toList |> List.map noteName)
+        ]

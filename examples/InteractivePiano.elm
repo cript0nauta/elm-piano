@@ -9,7 +9,7 @@ import Set
 import PlayerController
 import Piano
 import Json.Decode
-import Utils exposing (sizeSelector)
+import Utils exposing (debugNotes, sizeSelector)
 
 
 -- FIXME Delete when issue #686 of elm-lang/core is solved.
@@ -120,6 +120,7 @@ view model =
         if model.midiJSLoaded then
             div []
                 [ Piano.view pianoConfig model.pianoState
+                , debugNotes model.pianoState
                 , sizeSelector ChangePianoSize
                 ]
         else
