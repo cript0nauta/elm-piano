@@ -12,11 +12,14 @@ module Piano
         , initialState
         , setNotes
         , getNotes
+        , updateNotes
         , interactive
         , update
         , view
         , colorAllPressedKeys
         , colorAllUnpressedKeys
+        , colorPressedKeys
+        , colorUnpressedKeys
         , isNatural
         , noteName
         , octave
@@ -81,12 +84,15 @@ module Piano
 @docs pressedKeys
 @docs newKeys
 @docs releasedKeys
+@docs updateNotes
+@docs colorPressedKeys
+@docs colorUnpressedKeys
 
 -}
 
 import Css exposing (..)
 import Color
-import Dict
+import Dict exposing (Dict)
 import Html
 import Html.Styled exposing (..)
 import Html.Styled.Attributes exposing (..)
@@ -131,8 +137,8 @@ type alias Model =
     , interactive : Bool
     , showSizeSelector : Bool
     , debugNotes : Bool
-    , pressedKeyColors : Dict.Dict Note Color.Color
-    , unpressedKeyColors : Dict.Dict Note Color.Color
+    , pressedKeyColors : Dict Note Color.Color
+    , unpressedKeyColors : Dict Note Color.Color
     }
 
 
@@ -178,8 +184,8 @@ type Config msg
 
 type alias ConfigInternal msg =
     { noteRange : ( Note, Note )
-    , pressedKeyColors : Dict.Dict Note Color.Color
-    , unpressedKeyColors : Dict.Dict Note Color.Color
+    , pressedKeyColors : Dict Note Color.Color
+    , unpressedKeyColors : Dict Note Color.Color
     , update : Maybe (Msg -> msg)
     }
 
@@ -232,7 +238,14 @@ getNotes (State { notes }) =
     notes
 
 
-colorKeys : Color.Color -> Color.Color -> Dict.Dict Note Color.Color
+{-| TODO
+-}
+updateNotes : (Set Note -> Set Note) -> State -> State
+updateNotes f (State { notes }) =
+    State { notes = f notes }
+
+
+colorKeys : Color.Color -> Color.Color -> Dict Note Color.Color
 colorKeys white black =
     allNotes
         |> List.map
@@ -268,6 +281,20 @@ every update.
 colorAllUnpressedKeys : Color.Color -> Color.Color -> Config msg -> Config msg
 colorAllUnpressedKeys white black (Config config) =
     Config { config | unpressedKeyColors = colorKeys white black }
+
+
+{-| TODO
+-}
+colorPressedKeys : Dict Note Color.Color -> Config msg -> Config msg
+colorPressedKeys d (Config config) =
+    Config { config | pressedKeyColors = d }
+
+
+{-| TODO
+-}
+colorUnpressedKeys : Dict Note Color.Color -> Config msg -> Config msg
+colorUnpressedKeys d (Config config) =
+    Config { config | unpressedKeyColors = d }
 
 
 {-| Note range of a 12-key keyboard

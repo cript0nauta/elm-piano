@@ -31,7 +31,7 @@ type alias Model =
     , midiFileLoaded : Bool
     , midiError : Maybe String
     , playerInfo : PlayerController.Model
-    , piano : Piano.Model
+    , pianoState : Piano.State
     , colored : Bool
     }
 
@@ -46,21 +46,7 @@ init =
             , midiError = (Just "Not loaded")
             , colored = True
             , playerInfo = PlayerController.model
-            , piano =
-                -- I have to do this due to compiler restrictions
-                -- See https://github.com/elm-lang/elm-compiler/issues/635
-                -- for details
-                let
-                    p =
-                        Piano.initialModel
-                in
-                    { p
-                        | noteRange = Piano.keyboard88Keys
-                        , interactive = False
-                        , debugNotes = True
-                        , showSizeSelector = True
-                    }
-                        |> setPianoColors True
+            , pianoState = Piano.initialState
             }
     in
         ( model, Cmd.none )
@@ -88,37 +74,34 @@ colorWheelKeys saturation lightness l =
             |> Dict.fromList
 
 
-setPianoColors : Bool -> Piano.Model -> Piano.Model
-setPianoColors colored piano =
+setPianoColors : Bool -> Piano.Config msg -> Piano.Config msg
+setPianoColors colored config =
     let
-        pressedKeyColors =
-            if colored then
-                -- Color all pressed notes with higher saturation colors
-                Piano.allNotes
-                    -- |> List.filter Piano.isNatural
-                    |> colorWheelKeys 1 0.8
-            else
-                .pressedKeyColors Piano.initialModel
+        pressedKeysDict =
+            -- Color all pressed notes with higher saturation colors
+            Piano.allNotes
+                -- |> List.filter Piano.isNatural
+                |> colorWheelKeys 1 0.8
 
-        unpressedKeyColors =
-            if colored then
-                -- Color only white keys, leave the black ones black
-                Piano.allNotes
-                    |> List.filter Piano.isNatural
-                    |> colorWheelKeys 0.3 0.5
-                -- |> Dict.union
-                --     -- Color black keys
-                --     (Piano.allNotes
-                --         |> List.filter (not << Piano.isNatural)
-                --         |> colorWheelKeys 0.2 0.4
-                --     )
-            else
-                .pressedKeyColors Piano.initialModel
+        unpressedKeysDict =
+            -- Color only white keys, leave the black ones black
+            Piano.allNotes
+                |> List.filter Piano.isNatural
+                |> colorWheelKeys 0.3 0.5
+
+        -- |> Dict.union
+        --     -- Color black keys
+        --     (Piano.allNotes
+        --         |> List.filter (not << Piano.isNatural)
+        --         |> colorWheelKeys 0.2 0.4
+        --     )
     in
-        { piano
-            | pressedKeyColors = pressedKeyColors
-            , unpressedKeyColors = unpressedKeyColors
-        }
+        if colored then
+            config
+                |> Piano.colorPressedKeys pressedKeysDict
+                |> Piano.colorUnpressedKeys unpressedKeysDict
+        else
+            config
 
 
 
@@ -132,7 +115,6 @@ type Msg
     | LoadFailed String
     | MidiJSLoaded
     | ChangePlayerStatus PlayerController.Msg
-    | PianoEvent Piano.Msg
     | NoteOn Int
     | NoteOff Int
     | ToggleColored
@@ -188,35 +170,28 @@ update msg model =
             in
                 ( { model | playerInfo = playerModel }, cmd )
 
-        PianoEvent pianoMsg ->
-            ( { model | piano = Piano.update pianoMsg model.piano }, Cmd.none )
-
         NoteOn note ->
             let
-                piano =
-                    model.piano
-
                 newPiano =
-                    { piano | notes = Set.insert note model.piano.notes }
+                    model.pianoState
+                        |> Piano.updateNotes (Set.insert note)
             in
-                ( { model | piano = newPiano }, Cmd.none )
+                ( { model | pianoState = newPiano }, Cmd.none )
 
         NoteOff note ->
             let
-                piano =
-                    model.piano
-
                 newPiano =
-                    { piano | notes = Set.remove note model.piano.notes }
+                    model.pianoState
+                        |> Piano.updateNotes (Set.remove note)
             in
-                ( { model | piano = newPiano }, Cmd.none )
+                ( { model | pianoState = newPiano }, Cmd.none )
 
         ToggleColored ->
-            { model
+            ( { model
                 | colored = not model.colored
-                , piano = setPianoColors (not model.colored) model.piano
-            }
-                ! []
+              }
+            , Cmd.none
+            )
 
 
 
@@ -285,7 +260,11 @@ view model =
                  else
                     []
                 )
-            , Html.map PianoEvent (Piano.view model.piano)
+            , Piano.view
+                (Piano.config Piano.keyboard88Keys
+                    |> setPianoColors model.colored
+                )
+                model.pianoState
             ]
     else
         div [] [ text "MIDI.js not loaded" ]
