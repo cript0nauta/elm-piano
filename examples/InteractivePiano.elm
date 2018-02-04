@@ -74,13 +74,13 @@ update msg model =
 
                 noteOnCmds : List (Cmd msg)
                 noteOnCmds =
-                    Piano.newKeys keys
+                    Piano.newNotes keys
                         |> Set.toList
                         |> List.map noteOn
 
                 noteOffCmds : List (Cmd msg)
                 noteOffCmds =
-                    Piano.releasedKeys keys
+                    Piano.releasedNotes keys
                         |> Set.toList
                         |> List.map noteOff
             in

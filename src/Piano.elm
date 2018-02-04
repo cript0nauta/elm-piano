@@ -5,10 +5,10 @@ module Piano
         , Config
         , config
         , State
-        , CurrentKeys
-        , pressedKeys
-        , newKeys
-        , releasedKeys
+        , CurrentNotes
+        , activeNotes
+        , newNotes
+        , releasedNotes
         , initialState
         , setNotes
         , getNotes
@@ -80,10 +80,10 @@ module Piano
 @docs config
 @docs update
 @docs interactive
-@docs CurrentKeys
-@docs pressedKeys
-@docs newKeys
-@docs releasedKeys
+@docs CurrentNotes
+@docs activeNotes
+@docs newNotes
+@docs releasedNotes
 @docs updateNotes
 @docs colorPressedKeys
 @docs colorUnpressedKeys
@@ -354,9 +354,9 @@ type Msg
 {-| TODO
 -}
 type
-    CurrentKeys
+    CurrentNotes
     -- TODO: write integration tests for this data structure
-    = CurrentKeys
+    = CurrentNotes
         { old : Set Note
         , new : Set Note
         }
@@ -364,22 +364,22 @@ type
 
 {-| TODO
 -}
-pressedKeys : CurrentKeys -> Set Note
-pressedKeys (CurrentKeys { new }) =
+activeNotes : CurrentNotes -> Set Note
+activeNotes (CurrentNotes { new }) =
     new
 
 
 {-| TODO
 -}
-newKeys : CurrentKeys -> Set Note
-newKeys (CurrentKeys { old, new }) =
+newNotes : CurrentNotes -> Set Note
+newNotes (CurrentNotes { old, new }) =
     Set.diff new old
 
 
 {-| TODO
 -}
-releasedKeys : CurrentKeys -> Set Note
-releasedKeys (CurrentKeys { old, new }) =
+releasedNotes : CurrentNotes -> Set Note
+releasedNotes (CurrentNotes { old, new }) =
     Set.diff old new
 
 
@@ -389,13 +389,13 @@ You won't need to use this if you are using a non interactive
 keyboard without the keyboard size selector
 
 -}
-update : Msg -> State -> ( State, CurrentKeys )
+update : Msg -> State -> ( State, CurrentNotes )
 update msg (State oldState) =
     let
-        toTuple : State -> ( State, CurrentKeys )
+        toTuple : State -> ( State, CurrentNotes )
         toTuple (State newState) =
             ( State newState
-            , CurrentKeys
+            , CurrentNotes
                 { old = (oldState.notes)
                 , new = (newState.notes)
                 }
