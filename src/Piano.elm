@@ -7,6 +7,8 @@ module Piano
         , State
         , initialState
         , setNotes
+        , interactive
+        , update
         , view
         , colorAllPressedKeys
         , colorAllUnpressedKeys
@@ -67,6 +69,8 @@ module Piano
 @docs setNotes
 @docs State
 @docs config
+@docs update
+@docs interactive
 
 -}
 
@@ -184,6 +188,13 @@ config noteRange =
 
 {-| TODO
 -}
+interactive : (Msg -> yourMsg) -> Config a -> Config yourMsg
+interactive f (Config config) =
+    Config { config | update = Just f }
+
+
+{-| TODO
+-}
 type State
     = State
         { notes : Set.Set Note
@@ -294,7 +305,6 @@ changing the keyboard's size
 type Msg
     = KeyUp Note
     | KeyDown Note
-    | ChangeNoteRange ( Int, Int )
 
 
 {-| Handle the messages by updating model.notes or model.noteRange.
@@ -303,23 +313,14 @@ You won't need to use this if you are using a non interactive
 keyboard without the keyboard size selector
 
 -}
-update : Msg -> Model -> Model
-update msg model =
+update : Msg -> State -> State
+update msg (State { notes }) =
     case msg of
         KeyUp note ->
-            if model.interactive then
-                { model | notes = Set.remove note model.notes }
-            else
-                model
+            State { notes = Set.remove note notes }
 
         KeyDown note ->
-            if model.interactive then
-                { model | notes = Set.insert note model.notes }
-            else
-                model
-
-        ChangeNoteRange size ->
-            { model | noteRange = size }
+            State { notes = Set.insert note notes }
 
 
 
