@@ -363,29 +363,6 @@ view (Config config) (State { notes }) =
         range =
             List.range (Tuple.first config.noteRange) (Tuple.second config.noteRange)
 
-        -- sizeSelector =
-        --     if model.showSizeSelector then
-        --         let
-        --             keyboardOption size =
-        --                 let
-        --                     keys =
-        --                         Tuple.second size - Tuple.first size + 1
-        --                 in
-        --                     button [ onClick (ChangeNoteRange size) ]
-        --                         [ text (toString keys ++ "-key piano") ]
-        --         in
-        --             List.map keyboardOption
-        --                 [ keyboard12Keys
-        --                 , keyboard25Keys
-        --                 , keyboard49Keys
-        --                 , keyboard61Keys
-        --                 , keyboard76Keys
-        --                 , keyboard88Keys
-        --                 ]
-        --                 |> List.intersperse (br [] [])
-        --     else
-        --         []
-        --
         -- debugNotes =
         --     if model.debugNotes then
         --         [ div []

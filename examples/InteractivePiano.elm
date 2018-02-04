@@ -9,6 +9,7 @@ import Set
 import PlayerController
 import Piano
 import Json.Decode
+import Utils exposing (sizeSelector)
 
 
 -- FIXME Delete when issue #686 of elm-lang/core is solved.
@@ -30,6 +31,7 @@ main =
 type alias Model =
     { midiJSLoaded : Bool
     , pianoState : Piano.State
+    , pianoSize : ( Piano.Note, Piano.Note )
     }
 
 
@@ -38,6 +40,7 @@ init =
     ( Model
         False
         Piano.initialState
+        Piano.keyboard25Keys
     , Cmd.none
     )
 
@@ -49,6 +52,7 @@ init =
 type Msg
     = MidiJSLoaded
     | PianoEvent Piano.Msg
+    | ChangePianoSize ( Piano.Note, Piano.Note )
 
 
 port noteOn : Int -> Cmd msg
@@ -79,6 +83,11 @@ update msg model =
             , Cmd.none
             )
 
+        ChangePianoSize size ->
+            ( { model | pianoSize = size }
+            , Cmd.none
+            )
+
 
 
 -- SUBSCRIPTIONS
@@ -100,10 +109,13 @@ view : Model -> Html Msg
 view model =
     let
         pianoConfig =
-            Piano.config Piano.keyboard25Keys
+            Piano.config model.pianoSize
                 |> Piano.interactive PianoEvent
     in
         if model.midiJSLoaded then
-            Piano.view pianoConfig model.pianoState
+            div []
+                [ Piano.view pianoConfig model.pianoState
+                , sizeSelector ChangePianoSize
+                ]
         else
             div [] [ text "MIDI.js not loaded" ]
