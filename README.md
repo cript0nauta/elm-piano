@@ -15,7 +15,7 @@ not fully functional interactive mode so the keys the user clicks are markerd
 as pressed.
 
 If you want to see examples of how to use it to generate sound you should 
-check the example programs that use a MIDI.js port lo do it.
+check the example programs that use a MIDI.js port to do it.
 
 ## Documentation and examples
 

@@ -32,25 +32,50 @@ module Piano
         , keyboard88Keys
         )
 
-{-| A customizable piano component
+{-| A reusable piano view
 
 
-# Model
+# View
+
+@docs view
+
+
+# State
+
+@docs State
+@docs initialState
+@docs Note
+@docs getNotes
+@docs setNotes
+@docs updateNotes
+
+
+# Configuration
+
+@docs Config
+@docs config
+@docs interactive
+
+
+# Interactive mode functions and types
+
+Ignore this section if only want to display some notes rather than letting
+the user to select the notes by clicking on the piano keys.
+
+@docs Msg
+@docs update
+@docs CurrentNotes
+@docs activeNotes
+@docs newNotes
+@docs releasedNotes
+
+
+# Customizations
 
 @docs colorAllUnpressedKeys
 @docs colorAllPressedKeys
-@docs Note
-@docs allNotes
-
-
-# Messages and updates
-
-@docs Msg
-
-
-# HTML rendering
-
-@docs view
+@docs colorUnpressedKeys
+@docs colorPressedKeys
 
 
 # Note helpers
@@ -58,6 +83,7 @@ module Piano
 @docs noteName
 @docs isNatural
 @docs octave
+@docs allNotes
 
 
 # Keyboard size helpers
@@ -68,25 +94,6 @@ module Piano
 @docs keyboard61Keys
 @docs keyboard76Keys
 @docs keyboard88Keys
-
-
-# TODO doc
-
-@docs Config
-@docs initialState
-@docs setNotes
-@docs getNotes
-@docs State
-@docs config
-@docs update
-@docs interactive
-@docs CurrentNotes
-@docs activeNotes
-@docs newNotes
-@docs releasedNotes
-@docs updateNotes
-@docs colorPressedKeys
-@docs colorUnpressedKeys
 
 -}
 
@@ -176,7 +183,11 @@ initialModel =
     }
 
 
-{-| TODO
+{-| Configuration for the view.
+
+**Note:** This should *never* be held in your model, since it is related
+to the `view` code.
+
 -}
 type Config msg
     = Config (ConfigInternal msg)
@@ -190,7 +201,16 @@ type alias ConfigInternal msg =
     }
 
 
-{-| TODO
+{-| Construct a basic configuration
+
+It takes as its only argument a tuple holding the first and last notes that
+should be displayed. You can use one of the values described in
+[Keyboard size helpers](#keyboard-size-helpers) or specify your own.
+
+    pianoConfig : Piano.Config msg
+    pianoConfig =
+        Piano.config Piano.keyboard88Keys
+
 -}
 config : ( Note, Note ) -> Config msg
 config noteRange =
@@ -202,14 +222,26 @@ config noteRange =
             Nothing
 
 
-{-| TODO
+{-| Sets up interactive mode for the view
+
+    type Msg
+        = PianoEvent Piano.Msg
+        | OtherEvent
+
+    pianoConfig =
+        Piano.config Piano.keyboard88Keys
+            |> Piano.interactive PianoEvent
+
+Pass it a constructor that wraps an internal message into your own message
+type. In other libraries this would be what you pass to the `Html.map` function
+
 -}
 interactive : (Msg -> yourMsg) -> Config a -> Config yourMsg
 interactive f (Config config) =
     Config { config | update = Just f }
 
 
-{-| TODO
+{-| The view's internal state. You should keep this on your model
 -}
 type State
     = State
@@ -217,28 +249,52 @@ type State
         }
 
 
-{-| TODO
+{-| Contructor for the State type
 -}
 initialState : State
 initialState =
     State { notes = Set.empty }
 
 
-{-| TODO
+{-| Set the currently pressed notes of the piano
+
+    newPianoState =
+        -- The only pressed key will be the middle C
+        Piano.initialState
+            |> Piano.setNotes (Set.singleton 48)
+
 -}
 setNotes : Set Note -> State -> State
 setNotes notes _ =
     State { notes = notes }
 
 
-{-| TODO
+{-| Returns the currently pressed notes of a State
+
+    showPressedNotes : Piano.State -> Html msg
+    showPressedNotes state =
+        text <|
+            "Currently pressed notes: "
+                ++ String.join ", "
+                    (Piano.getNotes state
+                        |> Set.toList
+                        |> List.map Piano.noteName
+                    )
+
 -}
 getNotes : State -> Set Note
 getNotes (State { notes }) =
     notes
 
 
-{-| TODO
+{-| Changes the currently pressed notes of a State
+
+    newPianoState =
+        -- If the middle C was pressed, unpress it
+        -- the remaining keys won't change their pressed status
+        oldPianoState
+            |> Piano.updateNotes (Set.remove 48)
+
 -}
 updateNotes : (Set Note -> Set Note) -> State -> State
 updateNotes f (State { notes }) =
@@ -268,14 +324,15 @@ colorAllPressedKeys white black (Config config) =
     Config { config | pressedKeyColors = colorKeys white black }
 
 
-{-| Update a Piano model by setting the color of all the unpressed keys.
+{-| Update a Piano configuaration by setting the color of all the unpressed
+keys.
 
 It takes as parameter the desired color of the white and the black keys, in
 that order.
 
-Notice that if more keys are pressed after calling the function, the new keys
-will also have this color, so there is no need of calling this function on
-every update.
+    pianoConfig =
+        Piano.config Piano.keyboard88Keys
+            |> Piano.colorAllUnpressedKeys Color.lightOrange Color.darkOrange
 
 -}
 colorAllUnpressedKeys : Color.Color -> Color.Color -> Config msg -> Config msg
@@ -283,14 +340,18 @@ colorAllUnpressedKeys white black (Config config) =
     Config { config | unpressedKeyColors = colorKeys white black }
 
 
-{-| TODO
+{-| Same as `colorUnpressedKeys` but changes the color of pressed keys instead.
 -}
 colorPressedKeys : Dict Note Color.Color -> Config msg -> Config msg
 colorPressedKeys d (Config config) =
     Config { config | pressedKeyColors = d }
 
 
-{-| TODO
+{-| Override the default colors of the unpressed keys
+
+Use it when the two functions above don't satisfy your needs (you probably
+want to use different colors for each note)
+
 -}
 colorUnpressedKeys : Dict Note Color.Color -> Config msg -> Config msg
 colorUnpressedKeys d (Config config) =
@@ -343,15 +404,17 @@ keyboard88Keys =
 -- UPDATE
 
 
-{-| Messages received when clicking a key or
-changing the keyboard's size
+{-| An opaque type representing messages that are passed inside the Piano view.
 -}
 type Msg
     = KeyUp Note
     | KeyDown Note
 
 
-{-| TODO
+{-| A data structure used for child-parent communication in the `update` function
+
+This follows the OutMsg pattern explained [here](https://medium.com/@_rchaves_/child-parent-communication-in-elm-outmsg-vs-translator-vs-nomap-patterns-f51b2a25ecb1)
+
 -}
 type
     CurrentNotes
@@ -362,31 +425,69 @@ type
         }
 
 
-{-| TODO
+{-| Return the currently pressed notes of a CurrentNotes object.
 -}
 activeNotes : CurrentNotes -> Set Note
 activeNotes (CurrentNotes { new }) =
     new
 
 
-{-| TODO
+{-| Return a set of the notes that were pressed in the last event and
+were unpressed before
+
+    ( pianoState, currentNotes ) =
+        Piano.update pianoMsg model.pianoState
+
+    noteOnCmds : List (Cmd msg)
+    noteOnCmds =
+        Piano.newNotes currentNotes
+            |> Set.toList
+            |> List.map noteOn
+
 -}
 newNotes : CurrentNotes -> Set Note
 newNotes (CurrentNotes { old, new }) =
     Set.diff new old
 
 
-{-| TODO
+{-| Return a set of the notes that were unpressed in the last event and
+were pressed before
+
+    ( pianoState, currentNotes ) =
+        Piano.update pianoMsg model.pianoState
+
+    noteOffCmds : List (Cmd msg)
+    noteOffCmds =
+        Piano.releasedNotes currentNotes
+            |> Set.toList
+            |> List.map noteOff
+
 -}
 releasedNotes : CurrentNotes -> Set Note
 releasedNotes (CurrentNotes { old, new }) =
     Set.diff old new
 
 
-{-| Handle the messages by updating model.notes or model.noteRange.
+{-| Use this function to update the piano State.
 
-You won't need to use this if you are using a non interactive
-keyboard without the keyboard size selector
+The second tuple member is intented for you to use it to do some actions
+in your code, like sending messages to a port producing sound
+(see the interactive example).
+
+    type Msg =
+        PianoEvent Piano.Msg
+        | OtherEvent
+
+    update : Msg -> Model -> Model
+    update msg model =
+        case msg of
+            PianoEvent pianoMsg =
+                let
+                    -- I don't need to use the CurrentNotes right now
+                    (newPianoState, _) =
+                        Piano.update pianoMsg model.piano
+                in
+                    { model | piano = newPianoState }
 
 -}
 update : Msg -> State -> ( State, CurrentNotes )
@@ -419,8 +520,14 @@ updateInternal msg (State { notes }) =
 -- VIEW
 
 
-{-| Show the Piano component and, if set in the model, the debug text and the
-keyboard size changer.
+{-| Show the piano given its configuration and its state.
+
+**Note**: The piano `State` should live in your model, but the `Config` shouldn't,
+since it belongs to your `view` code. For more information about why you should
+do this read
+[this](https://github.com/evancz/elm-sortable-table/#about-api-design) explaination
+(it was done for the great `elm-sortable-table` library whose API inspired me).
+
 -}
 view : Config msg -> State -> Html.Html msg
 view (Config config) (State { notes }) =
