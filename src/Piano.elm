@@ -100,6 +100,7 @@ the user to select the notes by clicking on the piano keys.
 import Css exposing (..)
 import Color
 import Dict exposing (Dict)
+import Json.Decode
 import Html
 import Html.Styled exposing (..)
 import Html.Styled.Attributes exposing (..)
@@ -717,6 +718,13 @@ viewKey config note color active =
                 hex "#55AA55"
             else
                 hex "#000000"
+
+        onMouseDown_ msg =
+            -- Use preventDefault to prevent native drag & drop feature
+            onWithOptions
+                "mousedown"
+                { defaultOptions | preventDefault = True }
+                (Json.Decode.succeed msg)
     in
         if isNatural note then
             div
@@ -734,7 +742,7 @@ viewKey config note color active =
                     )
                     |> event config onMouseEnter (Enter note)
                     |> event config onMouseLeave (Leave note)
-                    |> event config onMouseDown (Click note)
+                    |> event config onMouseDown_ (Click note)
                 )
                 []
         else
@@ -761,7 +769,7 @@ viewKey config note color active =
                         )
                         |> event config onMouseEnter (Enter note)
                         |> event config onMouseLeave (Leave note)
-                        |> event config onMouseDown (Click note)
+                        |> event config onMouseDown_ (Click note)
                     )
                     []
                 ]
