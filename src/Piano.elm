@@ -249,8 +249,7 @@ type State
 
 
 type alias StateInternal =
-    { notes : Set Note
-    , mouse : MouseStatus
+    { presses : Dict String PressStatus
     }
 
 
@@ -260,11 +259,34 @@ type MouseStatus
     | ClickedKey Note
 
 
+{-| Like a maybe but more verbose
+-}
+type PressStatus
+    = NothingPressed
+    | KeyPressed Note
+
+
+pressStatusToMaybe : PressStatus -> Maybe Note
+pressStatusToMaybe status =
+    case status of
+        NothingPressed ->
+            Nothing
+
+        KeyPressed note ->
+            Just note
+
+
+clickPressKey : String
+clickPressKey =
+    -- A string that doesn't collapse with Touch identifiers
+    "_PIANO_MOUSE_CLICK"
+
+
 {-| Contructor for the State type
 -}
 initialState : State
 initialState =
-    State { notes = Set.empty, mouse = NotClicked }
+    State { presses = Dict.empty }
 
 
 {-| Set the currently pressed notes of the piano
@@ -276,8 +298,9 @@ initialState =
 
 -}
 setNotes : Set Note -> State -> State
-setNotes notes (State state) =
-    State { state | notes = notes }
+setNotes notes _ =
+    -- State { state | notes = notes }
+    Debug.crash ""
 
 
 {-| Returns the currently pressed notes of a State
@@ -294,8 +317,10 @@ setNotes notes (State state) =
 
 -}
 getNotes : State -> Set Note
-getNotes (State { notes }) =
-    notes
+getNotes (State { presses }) =
+    Dict.values presses
+        |> List.filterMap pressStatusToMaybe
+        |> Set.fromList
 
 
 {-| Changes the currently pressed notes of a State
@@ -308,8 +333,9 @@ getNotes (State { notes }) =
 
 -}
 updateNotes : (Set Note -> Set Note) -> State -> State
-updateNotes f (State state) =
-    State { state | notes = f state.notes }
+updateNotes f _ =
+    -- State { state | notes = f state.notes }
+    Debug.crash ""
 
 
 colorKeys : Color.Color -> Color.Color -> Dict Note Color.Color
@@ -511,8 +537,8 @@ update msg (State oldState) =
         toTuple newState =
             ( State newState
             , CurrentNotes
-                { old = (oldState.notes)
-                , new = (newState.notes)
+                { old = getNotes (State oldState)
+                , new = getNotes (State newState)
                 }
             )
     in
@@ -521,77 +547,83 @@ update msg (State oldState) =
 
 
 updateInternal : Msg -> StateInternal -> StateInternal
-updateInternal msg ({ notes, mouse } as state) =
-    case msg of
-        Enter note ->
-            case mouse of
-                NotClicked ->
-                    state
+updateInternal msg ({ presses } as state) =
+    let
+        mouse =
+            pressesToMouseStatus presses
+    in
+        case msg of
+            Enter note ->
+                case mouse of
+                    NotClicked ->
+                        state
 
-                ClickedOutsideKeys ->
-                    StateInternal
-                        (Set.insert note notes)
-                        (ClickedKey note)
-
-                ClickedKey oldNote ->
-                    StateInternal
-                        (notes
-                            |> Set.remove oldNote
-                            |> Set.insert note
-                        )
-                        (ClickedKey note)
-
-        Leave leaveNote ->
-            case mouse of
-                NotClicked ->
-                    state
-
-                ClickedOutsideKeys ->
-                    state
-                        |> Debug.log "Piano: detected note leave with mouse outside piano keys"
-
-                ClickedKey clickNote ->
-                    let
-                        debug =
-                            if clickNote == leaveNote then
-                                state
-                            else
-                                state
-                                    |> Debug.log "Piano: detected note leave with different pressed note"
-                    in
+                    ClickedOutsideKeys ->
                         StateInternal
-                            (Set.remove leaveNote notes)
-                            ClickedOutsideKeys
+                            (presses
+                                |> Dict.insert clickPressKey (KeyPressed note)
+                            )
 
-        Click note ->
-            case mouse of
-                NotClicked ->
-                    StateInternal
-                        (Set.insert note state.notes)
-                        (ClickedKey note)
+                    ClickedKey oldNote ->
+                        StateInternal
+                            (presses
+                                |> Dict.insert clickPressKey (KeyPressed note)
+                                |> Debug.log "Piano: entering a key without prior leave"
+                            )
 
-                _ ->
-                    state
-                        |> Debug.log "Piano: detected click event with the mouse already clicked. Check this"
+            Leave leaveNote ->
+                case mouse of
+                    NotClicked ->
+                        state
 
-        MouseUp ->
-            let
-                notes =
-                    case mouse of
-                        ClickedKey note ->
-                            Set.remove note state.notes
+                    ClickedOutsideKeys ->
+                        state
+                            |> Debug.log "Piano: detected note leave with mouse outside piano keys"
 
-                        _ ->
-                            state.notes
-            in
-                StateInternal
-                    notes
-                    NotClicked
+                    ClickedKey clickNote ->
+                        let
+                            debug =
+                                if clickNote == leaveNote then
+                                    state
+                                else
+                                    state
+                                        |> Debug.log "Piano: detected note leave with different pressed note"
+                        in
+                            StateInternal <|
+                                Dict.insert clickPressKey NothingPressed presses
 
-        LeaveContainer ->
-            -- MouseUp events that happen outside the container won't be
-            -- registered, so it's better to force the status to be not clicked
-            { state | mouse = NotClicked }
+            Click note ->
+                case mouse of
+                    NotClicked ->
+                        StateInternal <|
+                            Dict.insert clickPressKey (KeyPressed note) presses
+
+                    _ ->
+                        state
+                            |> Debug.log "Piano: detected click event with the mouse already clicked. Check this"
+
+            MouseUp ->
+                StateInternal <|
+                    Dict.remove clickPressKey presses
+
+            LeaveContainer ->
+                -- MouseUp events that happen outside the container won't be
+                -- registered, so it's better to force the status to be not clicked
+                StateInternal <|
+                    Dict.remove clickPressKey presses
+
+
+pressesToMouseStatus : Dict String PressStatus -> MouseStatus
+pressesToMouseStatus d =
+    case (Dict.get clickPressKey d) of
+        Nothing ->
+            NotClicked
+
+        Just NothingPressed ->
+            ClickedOutsideKeys
+
+        Just (KeyPressed note) ->
+            ClickedKey note
 
 
 
@@ -608,8 +640,11 @@ do this read
 
 -}
 view : Config msg -> State -> Html.Html msg
-view (Config config) (State { notes }) =
+view (Config config) state =
     let
+        notes =
+            getNotes state
+
         container inner =
             div
                 (List.singleton
@@ -723,6 +758,18 @@ viewKey config note color active =
             -- Use preventDefault to prevent native drag & drop feature
             onWithOptions
                 "mousedown"
+                { defaultOptions | preventDefault = True }
+                (Json.Decode.succeed msg)
+
+        onTouchStart msg =
+            onWithOptions
+                "touchstart"
+                { defaultOptions | preventDefault = True }
+                (Json.Decode.succeed msg)
+
+        onTouchEnd msg =
+            onWithOptions
+                "touchend"
                 { defaultOptions | preventDefault = True }
                 (Json.Decode.succeed msg)
     in
