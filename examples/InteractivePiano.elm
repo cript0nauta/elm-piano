@@ -8,6 +8,7 @@ import Maybe exposing (Maybe(..), withDefault)
 import Set
 import PlayerController
 import Piano
+import Piano.Note as Piano
 import Json.Decode
 import Utils exposing (debugNotes, sizeSelector)
 

@@ -5,6 +5,7 @@ import Html exposing (..)
 import Html.Attributes exposing (style)
 import Html.Events exposing (onClick)
 import Piano exposing (..)
+import Piano.Note exposing (..)
 
 
 sizeSelector : (( Note, Note ) -> msg) -> Html msg

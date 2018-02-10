@@ -1,7 +1,7 @@
 module Piano
     exposing
         ( Msg
-        , Note
+          -- , Note
         , Config
         , config
         , State
@@ -20,10 +20,10 @@ module Piano
         , colorAllUnpressedKeys
         , colorPressedKeys
         , colorUnpressedKeys
-        , isNatural
-        , noteName
-        , octave
-        , allNotes
+          -- , isNatural
+          -- , noteName
+          -- , octave
+          -- , allNotes
         , keyboard12Keys
         , keyboard25Keys
         , keyboard49Keys
@@ -44,7 +44,7 @@ module Piano
 
 @docs State
 @docs initialState
-@docs Note
+docs Note
 @docs getNotes
 @docs setNotes
 @docs updateNotes
@@ -80,10 +80,10 @@ the user to select the notes by clicking on the piano keys.
 
 # Note helpers
 
-@docs noteName
-@docs isNatural
-@docs octave
-@docs allNotes
+docs noteName
+docs isNatural
+docs octave
+docs allNotes
 
 
 # Keyboard size helpers
@@ -106,7 +106,8 @@ import Html.Styled exposing (..)
 import Html.Styled.Attributes exposing (..)
 import Html.Styled.Events exposing (..)
 import Set exposing (Set)
-import String
+import Piano.Note exposing (..)
+import Piano.TouchEvents exposing (..)
 
 
 -- main =
@@ -148,22 +149,6 @@ type alias Model =
     , pressedKeyColors : Dict Note Color.Color
     , unpressedKeyColors : Dict Note Color.Color
     }
-
-
-{-| Represents a note giving its MIDI Note Number
-
-See <http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note_numbers_for_octaves.htm> for more information
-
--}
-type alias Note =
-    Int
-
-
-{-| A list with all valid MIDI notes
--}
-allNotes : List Note
-allNotes =
-    List.range 0 127
 
 
 {-| Common initial configuration for the component
@@ -250,6 +235,7 @@ type State
 
 type alias StateInternal =
     { presses : Dict String PressStatus
+    , keyPositions : Maybe KeyPositions
     }
 
 
@@ -286,7 +272,7 @@ clickPressKey =
 -}
 initialState : State
 initialState =
-    State { presses = Dict.empty }
+    State { presses = Dict.empty, keyPositions = Nothing }
 
 
 {-| Set the currently pressed notes of the piano
@@ -449,6 +435,9 @@ type Msg
     | Click Note
     | MouseUp
     | LeaveContainer
+    | TouchStart Note TouchEvent
+    | TouchMove TouchEvent
+    | TouchEnd TouchEvent
 
 
 {-| A data structure used for child-parent communication in the `update` function
@@ -559,17 +548,19 @@ updateInternal msg ({ presses } as state) =
                         state
 
                     ClickedOutsideKeys ->
-                        StateInternal
-                            (presses
-                                |> Dict.insert clickPressKey (KeyPressed note)
-                            )
+                        { state
+                            | presses =
+                                presses
+                                    |> Dict.insert clickPressKey (KeyPressed note)
+                        }
 
                     ClickedKey oldNote ->
-                        StateInternal
-                            (presses
-                                |> Dict.insert clickPressKey (KeyPressed note)
-                                |> Debug.log "Piano: entering a key without prior leave"
-                            )
+                        { state
+                            | presses =
+                                presses
+                                    |> Dict.insert clickPressKey (KeyPressed note)
+                                    |> Debug.log "Piano: entering a key without prior leave"
+                        }
 
             Leave leaveNote ->
                 case mouse of
@@ -589,28 +580,97 @@ updateInternal msg ({ presses } as state) =
                                     state
                                         |> Debug.log "Piano: detected note leave with different pressed note"
                         in
-                            StateInternal <|
-                                Dict.insert clickPressKey NothingPressed presses
+                            { state | presses = Dict.insert clickPressKey NothingPressed presses }
 
             Click note ->
                 case mouse of
                     NotClicked ->
-                        StateInternal <|
-                            Dict.insert clickPressKey (KeyPressed note) presses
+                        { state | presses = Dict.insert clickPressKey (KeyPressed note) presses }
 
                     _ ->
                         state
                             |> Debug.log "Piano: detected click event with the mouse already clicked. Check this"
 
             MouseUp ->
-                StateInternal <|
-                    Dict.remove clickPressKey presses
+                { state | presses = Dict.remove clickPressKey presses }
 
             LeaveContainer ->
                 -- MouseUp events that happen outside the container won't be
                 -- registered, so it's better to force the status to be not clicked
-                StateInternal <|
-                    Dict.remove clickPressKey presses
+                { state | presses = Dict.remove clickPressKey presses }
+
+            TouchStart note evt ->
+                let
+                    positions =
+                        case state.keyPositions of
+                            Nothing ->
+                                computeKeyPositions note evt
+
+                            Just p ->
+                                p
+
+                    foldPresses : Touch -> Dict String PressStatus -> Dict String PressStatus
+                    foldPresses t p =
+                        case (fromCoordinates t.coordinates positions) of
+                            Nothing ->
+                                Dict.insert t.identifier (NothingPressed) p
+                                    |> Debug.log "no key pressed"
+
+                            Just note ->
+                                Dict.insert t.identifier (KeyPressed note) p
+
+                    newPresses =
+                        List.foldr
+                            foldPresses
+                            presses
+                            evt.touches
+                in
+                    { state
+                        | keyPositions = Just positions
+                        , presses = newPresses
+                    }
+
+            TouchEnd evt ->
+                { state
+                    | presses =
+                        List.foldr
+                            (\t p -> Dict.remove t.identifier p)
+                            presses
+                            evt.touches
+                }
+
+            TouchMove evt ->
+                case state.keyPositions of
+                    Nothing ->
+                        state
+                            |> Debug.log "Piano: touchmove without key positions. Ignoring event"
+
+                    Just positions ->
+                        let
+                            foldPresses touch p =
+                                let
+                                    status =
+                                        case
+                                            (fromCoordinates
+                                                touch.coordinates
+                                                positions
+                                            )
+                                        of
+                                            Nothing ->
+                                                NothingPressed
+
+                                            Just note ->
+                                                KeyPressed note
+                                in
+                                    Dict.insert touch.identifier status p
+                        in
+                            { state
+                                | presses =
+                                    List.foldr
+                                        foldPresses
+                                        presses
+                                        evt.touches
+                            }
 
 
 pressesToMouseStatus : Dict String PressStatus -> MouseStatus
@@ -760,18 +820,6 @@ viewKey config note color active =
                 "mousedown"
                 { defaultOptions | preventDefault = True }
                 (Json.Decode.succeed msg)
-
-        onTouchStart msg =
-            onWithOptions
-                "touchstart"
-                { defaultOptions | preventDefault = True }
-                (Json.Decode.succeed msg)
-
-        onTouchEnd msg =
-            onWithOptions
-                "touchend"
-                { defaultOptions | preventDefault = True }
-                (Json.Decode.succeed msg)
     in
         if isNatural note then
             div
@@ -790,6 +838,7 @@ viewKey config note color active =
                     |> event config onMouseEnter (Enter note)
                     |> event config onMouseLeave (Leave note)
                     |> event config onMouseDown_ (Click note)
+                    |> touchEvents config note
                 )
                 []
         else
@@ -832,39 +881,14 @@ event { update } f internalMsg attrs =
             attrs
 
 
+touchEvents : ConfigInternal msg -> Note -> List (Attribute msg) -> List (Attribute msg)
+touchEvents { update } note l =
+    case update of
+        Nothing ->
+            l
 
--- Note helpers
-
-
-{-| Octave number of a note
--}
-octave : Note -> Int
-octave note =
-    note // 12
-
-
-{-| Return False if note is a flat or a sharp, True otherwise
--}
-isNatural : Note -> Bool
-isNatural note =
-    List.member (note % 12) [ 0, 2, 4, 5, 7, 9, 11 ]
-
-
-{-| Represent a note number as a string
--}
-noteName : Note -> String
-noteName note =
-    let
-        getCharAt n str =
-            String.slice n (n + 1) str
-
-        noteName_ =
-            getCharAt (note % 12) "CCDDEFFGGAAB"
-
-        alteration =
-            if isNatural note then
-                ""
-            else
-                "#"
-    in
-        noteName_ ++ alteration ++ toString (octave note)
+        Just w ->
+            onTouchStart (w << TouchStart note)
+                :: onTouchMove (w << TouchMove)
+                :: onTouchEnd (w << TouchEnd)
+                :: l
