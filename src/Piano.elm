@@ -436,7 +436,7 @@ type Msg
     | MouseUp
     | LeaveContainer
     | TouchStart Note TouchEvent
-    | TouchMove TouchEvent
+    | TouchMove ( Note, Note ) TouchEvent
     | TouchEnd TouchEvent
 
 
@@ -639,7 +639,7 @@ updateInternal msg ({ presses } as state) =
                             evt.touches
                 }
 
-            TouchMove evt ->
+            TouchMove ( firstNote, lastNote ) evt ->
                 case state.keyPositions of
                     Nothing ->
                         state
@@ -660,7 +660,11 @@ updateInternal msg ({ presses } as state) =
                                                 NothingPressed
 
                                             Just note ->
-                                                KeyPressed note
+                                                if firstNote <= note && note <= lastNote then
+                                                    KeyPressed note
+                                                else
+                                                    -- out of visible boundaries
+                                                    NothingPressed
                                 in
                                     Dict.insert touch.identifier status p
                         in
@@ -882,13 +886,13 @@ event { update } f internalMsg attrs =
 
 
 touchEvents : ConfigInternal msg -> Note -> List (Attribute msg) -> List (Attribute msg)
-touchEvents { update } note l =
+touchEvents { update, noteRange } note l =
     case update of
         Nothing ->
             l
 
         Just w ->
             onTouchStart (w << TouchStart note)
-                :: onTouchMove (w << TouchMove)
+                :: onTouchMove (w << TouchMove noteRange)
                 :: onTouchEnd (w << TouchEnd)
                 :: l
