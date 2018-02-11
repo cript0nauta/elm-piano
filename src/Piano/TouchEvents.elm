@@ -13,6 +13,7 @@ I based on this stack overflow question to write the module:
 
 import Array exposing (Array)
 import Json.Decode as Json exposing (..)
+import Json.Decode.Extra exposing (collection)
 import Html.Styled
 import Html.Styled.Events exposing (onWithOptions, defaultOptions)
 import Piano.Note exposing (..)
@@ -39,10 +40,7 @@ eventDecoder : Decoder TouchEvent
 eventDecoder =
     Json.map5 TouchEvent
         (field "type" string)
-        -- (at [ "changedTouches", "0" ] touchDecoder |> map List.singleton)
-        (at [ "changedTouches", "0" ] touchDecoder
-            |> map List.singleton
-        )
+        (field "changedTouches" (collection touchDecoder))
         (map2
             (,)
             (at [ "target", "offsetLeft" ] int)
@@ -61,21 +59,6 @@ touchDecoder =
             (field "pageX" int)
             (field "pageY" int)
         )
-
-
-
--- strangeList : Decoder a -> Decoder (List a)
--- strangeList d =
---     let
---         innerDecoder : ( Int, a ) -> Decoder (List a)
---         innerDecoder (n, a) =
---             let
---                 ffds
---     in
---         map2 (,)
---             (field "length" int |> map (\x -> x-1))
---             d
---             |> andThen innerDecoder
 
 
 debugDecoderErrors : Decoder a -> Decoder a
