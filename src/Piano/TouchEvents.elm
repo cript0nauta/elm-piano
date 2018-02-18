@@ -24,9 +24,7 @@ type alias TouchEvent =
 
     -- I only need the changedTouches property
     , touches : List Touch
-    , targetCoordinates : ( Int, Int )
-    , targetWidth : Int
-    , targetHeight : Int
+    , keys : List ElementData
     }
 
 
@@ -36,18 +34,34 @@ type alias Touch =
     }
 
 
+type alias ElementData =
+    { note : Note
+    , x : Int
+    , y : Int
+    , width : Int
+    , height : Int
+    }
+
+
 eventDecoder : Decoder TouchEvent
 eventDecoder =
-    Json.map5 TouchEvent
+    Json.map3 TouchEvent
         (field "type" string)
         (field "changedTouches" (collection touchDecoder))
-        (map2
-            (,)
-            (at [ "target", "offsetLeft" ] int)
-            (at [ "target", "offsetTop" ] int)
+        (at [ "target", "attributes", "data-note", "value" ] string
+            |> map String.toInt
+            |> andThen fromResult
+            |> andThen
+                (\note ->
+                    at
+                        (if isNatural note then
+                            [ "target", "parentNode", "childNodes" ]
+                         else
+                            [ "target", "parentNode", "parentNode", "childNodes" ]
+                        )
+                        (collection elementDecoder)
+                )
         )
-        (at [ "target", "offsetWidth" ] int)
-        (at [ "target", "offsetHeight" ] int)
 
 
 touchDecoder : Decoder Touch
@@ -78,12 +92,61 @@ debugDecoderErrors d =
             |> andThen fromResult
 
 
+elementDecoder : Decoder ElementData
+elementDecoder =
+    oneOf
+        [ at [ "attributes", "data-note", "value" ] string
+        , at [ "childNodes", "0", "attributes", "data-note", "value" ] string
+        ]
+        |> map String.toInt
+        |> andThen fromResult
+        |> andThen
+            (\note ->
+                let
+                    childField : String -> Decoder a -> Decoder a
+                    childField fieldName dec =
+                        if isNatural note then
+                            field fieldName dec
+                        else
+                            at ([ "childNodes", "0", fieldName ]) dec
+                in
+                    map4 (ElementData note)
+                        (field "offsetLeft" int
+                            |> map
+                                (\left ->
+                                    if isNatural note then
+                                        left
+                                    else
+                                        -- Black keys have a left: -10px CSS property
+                                        -- needs to be compensated
+                                        left - 10
+                                )
+                        )
+                        (field "offsetTop" int)
+                        (childField "offsetWidth" int)
+                        (childField "offsetHeight" int)
+            )
 
--- event =
---     TouchEvent
---         ""
---         []
---         ( 0, 0 )
+
+impureCollection : Decoder a -> Decoder (List a)
+impureCollection d =
+    collection
+        (oneOf
+            [ map Just d
+            , succeed Nothing
+            ]
+        )
+        |> map (List.filterMap identity)
+
+
+fromResult : Result String value -> Decoder value
+fromResult r =
+    case r of
+        Err msg ->
+            fail msg
+
+        Ok val ->
+            succeed val
 
 
 onTouchStart : (TouchEvent -> msg) -> Html.Styled.Attribute msg
@@ -110,56 +173,16 @@ onTouchEnd msg =
         (Json.map msg eventDecoder)
 
 
-{-| Stores data that allows to convert from (x, y) coordinates to a
-Maybe Note
--}
-type alias KeyPositions =
-    { naturalKeyStarts : Array ( Note, ( Int, Int ) )
-    , naturalKeySize : ( Int, Int )
-    }
-
-
-{-| This function is a bit computionally heavy so it should be called only
-on the first recieved event or when an inconsistency is detected (probably
-because the piano container changed the position in the document)
--}
-computeKeyPositions : Note -> TouchEvent -> KeyPositions
-computeKeyPositions note { targetCoordinates, targetWidth, targetHeight } =
+fromCoordinates : TouchEvent -> ( Int, Int ) -> Maybe Note
+fromCoordinates evt ( x, y ) =
     let
-        naturalKeyStarts =
-            Array.fromList allNotes
-                |> Array.filter isNatural
-                |> Array.map
-                    (\n ->
-                        ( n
-                        , ( Tuple.first targetCoordinates
-                                - (targetWidth * (naturalKeyDistance note n))
-                            -- The Y axis doesn't change between keys
-                          , Tuple.second targetCoordinates
-                          )
-                        )
-                    )
+        matches : ElementData -> Bool
+        matches e =
+            (e.x <= x && x <= (e.x + e.width) && e.y <= y && y <= (e.y + e.height))
     in
-        KeyPositions
-            naturalKeyStarts
-            ( targetWidth, targetHeight )
-
-
-fromCoordinates : ( Int, Int ) -> KeyPositions -> Maybe Note
-fromCoordinates ( x, y ) positions =
-    let
-        matches : ( Int, Int ) -> Bool
-        matches ( startX, startY ) =
-            let
-                endX =
-                    startX + Tuple.first positions.naturalKeySize
-
-                endY =
-                    startY + Tuple.second positions.naturalKeySize
-            in
-                startX <= x && x <= endX && startY <= y && y <= endY
-    in
-        positions.naturalKeyStarts
-            |> Array.filter (Tuple.second >> matches)
-            |> Array.map Tuple.first
-            |> Array.get 0
+        evt.keys
+            |> List.partition (isNatural << .note)
+            |> (\( naturals, alters ) -> alters ++ naturals)
+            |> List.filter matches
+            |> List.head
+            |> Maybe.map .note

@@ -235,7 +235,6 @@ type State
 
 type alias StateInternal =
     { presses : Dict String PressStatus
-    , keyPositions : Maybe KeyPositions
     }
 
 
@@ -272,7 +271,7 @@ clickPressKey =
 -}
 initialState : State
 initialState =
-    State { presses = Dict.empty, keyPositions = Nothing }
+    State { presses = Dict.empty }
 
 
 {-| Set the currently pressed notes of the piano
@@ -601,17 +600,9 @@ updateInternal msg ({ presses } as state) =
 
             TouchStart note evt ->
                 let
-                    positions =
-                        case state.keyPositions of
-                            Nothing ->
-                                computeKeyPositions note evt
-
-                            Just p ->
-                                p
-
                     foldPresses : Touch -> Dict String PressStatus -> Dict String PressStatus
                     foldPresses t p =
-                        case (fromCoordinates t.coordinates positions) of
+                        case (fromCoordinates evt t.coordinates) of
                             Nothing ->
                                 Dict.insert t.identifier (NothingPressed) p
                                     |> Debug.log "no key pressed"
@@ -626,8 +617,7 @@ updateInternal msg ({ presses } as state) =
                             evt.touches
                 in
                     { state
-                        | keyPositions = Just positions
-                        , presses = newPresses
+                        | presses = newPresses
                     }
 
             TouchEnd evt ->
@@ -640,41 +630,42 @@ updateInternal msg ({ presses } as state) =
                 }
 
             TouchMove ( firstNote, lastNote ) evt ->
-                case state.keyPositions of
-                    Nothing ->
-                        state
-                            |> Debug.log "Piano: touchmove without key positions. Ignoring event"
+                let
+                    maybeFilter : (a -> Bool) -> Maybe a -> Maybe a
+                    maybeFilter f =
+                        Maybe.andThen
+                            (\a ->
+                                if f a then
+                                    Just a
+                                else
+                                    Nothing
+                            )
 
-                    Just positions ->
+                    isVisibleNote : Note -> Bool
+                    isVisibleNote note =
+                        -- Return False if the note is out of visible boundaries
+                        firstNote <= note && note <= lastNote
+
+                    foldPresses touch p =
                         let
-                            foldPresses touch p =
-                                let
-                                    status =
-                                        case
-                                            (fromCoordinates
-                                                touch.coordinates
-                                                positions
-                                            )
-                                        of
-                                            Nothing ->
-                                                NothingPressed
-
-                                            Just note ->
-                                                if firstNote <= note && note <= lastNote then
-                                                    KeyPressed note
-                                                else
-                                                    -- out of visible boundaries
-                                                    NothingPressed
-                                in
-                                    Dict.insert touch.identifier status p
+                            status =
+                                (fromCoordinates
+                                    evt
+                                    touch.coordinates
+                                )
+                                    |> maybeFilter isVisibleNote
+                                    |> Maybe.map KeyPressed
+                                    |> Maybe.withDefault NothingPressed
                         in
-                            { state
-                                | presses =
-                                    List.foldr
-                                        foldPresses
-                                        presses
-                                        evt.touches
-                            }
+                            Dict.insert touch.identifier status p
+                in
+                    { state
+                        | presses =
+                            List.foldr
+                                foldPresses
+                                presses
+                                evt.touches
+                    }
 
 
 pressesToMouseStatus : Dict String PressStatus -> MouseStatus
@@ -827,18 +818,18 @@ viewKey config note color active =
     in
         if isNatural note then
             div
-                (List.singleton
-                    (css
-                        [ blackWhiteStyle
-                        , keysBoderStyle
-                        , Css.width (px 24)
-                        , Css.height (px 100)
-                        , color
-                            |> Maybe.withDefault defaultColor
-                            |> backgroundColor
-                        , zIndex (int 1)
-                        ]
-                    )
+                ([ css
+                    [ blackWhiteStyle
+                    , keysBoderStyle
+                    , Css.width (px 24)
+                    , Css.height (px 100)
+                    , color
+                        |> Maybe.withDefault defaultColor
+                        |> backgroundColor
+                    , zIndex (int 1)
+                    ]
+                 , attribute "data-note" (toString note)
+                 ]
                     |> event config onMouseEnter (Enter note)
                     |> event config onMouseLeave (Leave note)
                     |> event config onMouseDown_ (Click note)
@@ -855,21 +846,22 @@ viewKey config note color active =
                     ]
                 ]
                 [ div
-                    (List.singleton
-                        (css
-                            [ Css.width (px 16)
-                            , Css.height (px 70)
-                            , position relative
-                            , left (px (-10))
-                            , color
-                                |> Maybe.withDefault defaultColor
-                                |> backgroundColor
-                            , keysBoderStyle
-                            ]
-                        )
+                    ([ css
+                        [ Css.width (px 16)
+                        , Css.height (px 70)
+                        , position relative
+                        , left (px (-10))
+                        , color
+                            |> Maybe.withDefault defaultColor
+                            |> backgroundColor
+                        , keysBoderStyle
+                        ]
+                     , attribute "data-note" (toString note)
+                     ]
                         |> event config onMouseEnter (Enter note)
                         |> event config onMouseLeave (Leave note)
                         |> event config onMouseDown_ (Click note)
+                        |> touchEvents config note
                     )
                     []
                 ]
