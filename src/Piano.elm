@@ -222,7 +222,7 @@ view model =
                                 Tuple.second size - Tuple.first size + 1
                         in
                             button [ onClick (ChangeNoteRange size) ]
-                                [ text (toString keys ++ "-key piano") ]
+                                [ text (String.fromInt keys ++ "-key piano") ]
                 in
                     List.map keyboardOption
                         [ keyboard12Keys
@@ -248,12 +248,13 @@ view model =
             else
                 []
     in
-        span [ style [ ( "text-align", "center" ) ] ]
+        span [ style "text-align" "center" ]
             ([ myStyle
              , container <|
-                List.map2 viewKey
+                List.map (\note ->
+                        viewKey note (Set.member note model.notes)
+                    )
                     range
-                    (List.map (flip Set.member model.notes) range)
              ]
                 ++ debugNotes
                 ++ sizeSelector
@@ -304,7 +305,7 @@ octave note =
 -}
 isNatural : Note -> Bool
 isNatural note =
-    List.member (note % 12) [ 0, 2, 4, 5, 7, 9, 11 ]
+    List.member (modBy 12 note) [ 0, 2, 4, 5, 7, 9, 11 ]
 
 
 {-| Represent a note number as a string
@@ -316,7 +317,7 @@ noteName note =
             String.slice n (n + 1) str
 
         noteName_ =
-            getCharAt (note % 12) "CCDDEFFGGAAB"
+            getCharAt (modBy 12 note) "CCDDEFFGGAAB"
 
         alteration =
             if isNatural note then
@@ -324,4 +325,4 @@ noteName note =
             else
                 "#"
     in
-        noteName_ ++ alteration ++ toString (octave note)
+        noteName_ ++ alteration ++ String.fromInt (octave note)
