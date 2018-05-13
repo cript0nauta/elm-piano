@@ -1,16 +1,17 @@
 module PlayerController exposing (..)
 
+import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
 
--- main =
---     beginnerProgram
---         { model = model
---         , view = view
---         , update = update
---         }
+main =
+    Browser.sandbox
+        { init = initialModel
+        , view = view
+        , update = update
+        }
 
 
 
