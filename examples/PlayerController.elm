@@ -1,17 +1,16 @@
 module PlayerController exposing (..)
 
 import Html exposing (..)
-import Html exposing (beginnerProgram)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
 
-main =
-    beginnerProgram
-        { model = model
-        , view = view
-        , update = update
-        }
+-- main =
+--     beginnerProgram
+--         { model = model
+--         , view = view
+--         , update = update
+--         }
 
 
 
@@ -23,8 +22,8 @@ type alias Model =
     }
 
 
-model : Model
-model =
+initialModel : Model
+initialModel =
     Model Stopped
 
 

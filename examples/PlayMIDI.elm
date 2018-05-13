@@ -1,25 +1,23 @@
 port module PlayMIDI exposing (..)
 
+import Browser exposing (Env, Page)
 import Html as Html exposing (..)
-import Html exposing (program)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Maybe exposing (Maybe(..), withDefault)
 import Set
 import PlayerController
 import Piano
-import Json.Decode
 
 
--- FIXME Delete when issue #686 of elm-lang/core is solved.
-
-
+main : Program () Model Msg
 main =
-    program
+    Browser.fullscreen
         { init = init
         , view = view
         , update = update
         , subscriptions = subscriptions
+        , onNavigation = Nothing
         }
 
 
@@ -37,15 +35,15 @@ type alias Model =
     }
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Env flags -> ( Model, Cmd Msg )
+init _ =
     let
         model =
             { midiUrl = ""
             , midiJSLoaded = False
             , midiFileLoaded = False
             , midiError = (Just "Not loaded")
-            , playerInfo = PlayerController.model
+            , playerInfo = PlayerController.initialModel
             , piano =
                 -- I have to do this due to compiler restrictions
                 -- See https://github.com/elm-lang/elm-compiler/issues/635
@@ -104,8 +102,8 @@ update msg model =
             -- ({model | midiFileLoaded=True}, Cmd.none)
             ( { model | midiFileLoaded = True }, resume () )
 
-        LoadFailed msg ->
-            ( { model | midiFileLoaded = False, midiError = Just msg }, Cmd.none )
+        LoadFailed err ->
+            ( { model | midiFileLoaded = False, midiError = Just err }, Cmd.none )
 
         MidiJSLoaded ->
             -- ({model | midiJSLoaded=True}, Cmd.none)
@@ -187,8 +185,8 @@ subscriptions model =
 -- VIEW
 
 
-view : Model -> Html Msg
-view model =
+viewHtml : Model -> Html Msg
+viewHtml model =
     if model.midiJSLoaded then
         div []
             [ input [ onInput ChangeUrl ] []
@@ -212,3 +210,9 @@ view model =
             ]
     else
         div [] [ text "MIDI.js not loaded" ]
+
+
+view : Model -> Page Msg
+view model =
+    { title = "Play MIDI"
+    , body = [viewHtml model] }
