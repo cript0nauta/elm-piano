@@ -1,21 +1,17 @@
 port module InteractivePiano exposing (..)
 
+import Browser
 import Html exposing (..)
-import Html exposing (program)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Maybe exposing (Maybe(..), withDefault)
 import Set
 import PlayerController
 import Piano
-import Json.Decode
-
-
--- FIXME Delete when issue #686 of elm-lang/core is solved.
 
 
 main =
-    program
+    Browser.document
         { init = init
         , view = view
         , update = update
@@ -33,9 +29,10 @@ type alias Model =
     }
 
 
-init : ( Model, Cmd Msg )
-init =
-    Model False Piano.initialModel ! []
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( Model False Piano.initialModel
+    , Cmd.none )
 
 
 
@@ -57,7 +54,8 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         MidiJSLoaded ->
-            { model | midiJSLoaded = True } ! []
+            ( { model | midiJSLoaded = True }
+            , Cmd.none )
 
         PianoEvent pianoMsg ->
             let
@@ -91,11 +89,13 @@ subscriptions model =
 -- VIEW
 
 
-view : Model -> Html Msg
+view : Model -> Browser.Document Msg
 view model =
     if model.midiJSLoaded then
-        div []
-            [ Html.map PianoEvent (Piano.view model.piano)
-            ]
+        { title = "Interactive piano"
+        , body = [ Html.map PianoEvent (Piano.view model.piano) ]
+        }
     else
-        div [] [ text "MIDI.js not loaded" ]
+        { title = "Loading..."
+        , body = [ text "MIDI.js not loaded" ]
+        }
