@@ -1,9 +1,10 @@
 port module PlayMIDI exposing (..)
 
+import Browser exposing (Document)
 import Color
 import Dict
 import Html as Html exposing (..)
-import Html exposing (program)
+import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Maybe exposing (Maybe(..), withDefault)
 import Set
@@ -11,9 +12,9 @@ import PlayerController
 import Piano
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    program
+    Browser.document
         { init = init
         , view = view
         , update = update
@@ -36,8 +37,8 @@ type alias Model =
     }
 
 
-init : ( Model, Cmd Msg )
-init =
+init : () -> ( Model, Cmd Msg )
+init _ =
     let
         model =
             { midiUrl = ""
@@ -145,12 +146,14 @@ update msg model =
             -- ({model | midiFileLoaded=True}, Cmd.none)
             ( { model | midiFileLoaded = True }, resume () )
 
-        LoadFailed msg ->
-            ( { model | midiFileLoaded = False, midiError = Just msg }, Cmd.none )
+        LoadFailed err ->
+            ( { model | midiFileLoaded = False, midiError = Just err }, Cmd.none )
 
         MidiJSLoaded ->
             -- ({model | midiJSLoaded=True}, Cmd.none)
-            ( { model | midiJSLoaded = True }, loadMIDI "midis/cabeza.mid" )
+            ( { model | midiJSLoaded = True }
+            , loadMIDI "midis/cabeza.mid"
+            )
 
         ChangePlayerStatus playerMsg ->
             let
@@ -228,8 +231,8 @@ subscriptions model =
 -- VIEW
 
 
-view : Model -> Html Msg
-view model =
+viewHtml : Model -> Html Msg
+viewHtml model =
     if model.midiJSLoaded then
         div []
             [ input [ onInput ChangeUrl ] []
@@ -268,3 +271,9 @@ view model =
             ]
     else
         div [] [ text "MIDI.js not loaded" ]
+
+
+view : Model -> Document Msg
+view model =
+    { title = "Play MIDI"
+    , body = [viewHtml model] }

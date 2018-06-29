@@ -24,14 +24,13 @@
 <script src="bower_components/midi/js/util/dom_request_script.js"></script>
 
 <script>
-    var app = Elm.PlayMIDI.fullscreen();
+    var app = Elm.PlayMIDI.init();
 
     MIDI.loadPlugin({
         instrument: "acoustic_grand_piano", // or the instrument code 1 (aka the default)
         onsuccess: function() { console.log('load success') },
         soundfontUrl: "bower_components/midi/examples/soundfont/",
         onsuccess: function(){
-            app.ports.midiJSLoaded.send(null);
             app.ports.loadMIDI.subscribe(function(url){
                 MIDI.Player.loadFile(
                         url,
@@ -45,6 +44,7 @@
                         }
                     );
             });
+            app.ports.midiJSLoaded.send(null);
             app.ports.resume.subscribe(MIDI.Player.resume);
             app.ports.pause.subscribe(MIDI.Player.pause);
             app.ports.stop.subscribe(MIDI.Player.stop);

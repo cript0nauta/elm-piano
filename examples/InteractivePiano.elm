@@ -1,22 +1,18 @@
 port module InteractivePiano exposing (..)
 
+import Browser
 import Html exposing (..)
-import Html exposing (program)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Maybe exposing (Maybe(..), withDefault)
 import Set
 import PlayerController
 import Piano
-import Json.Decode
 import Utils exposing (debugNotes, sizeSelector)
 
 
--- FIXME Delete when issue #686 of elm-lang/core is solved.
-
-
 main =
-    program
+    Browser.document
         { init = init
         , view = view
         , update = update
@@ -65,7 +61,8 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         MidiJSLoaded ->
-            { model | midiJSLoaded = True } ! []
+            ( { model | midiJSLoaded = True }
+            , Cmd.none )
 
         PianoEvent pianoMsg ->
             let
@@ -110,7 +107,7 @@ subscriptions model =
 -- VIEW
 
 
-view : Model -> Html Msg
+view : Model -> Browser.Document Msg
 view model =
     let
         pianoConfig =

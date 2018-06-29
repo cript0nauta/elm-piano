@@ -1,14 +1,14 @@
 module PlayerController exposing (..)
 
+import Browser
 import Html exposing (..)
-import Html exposing (beginnerProgram)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 
 
 main =
-    beginnerProgram
-        { model = model
+    Browser.sandbox
+        { init = initialModel
         , view = view
         , update = update
         }
@@ -23,8 +23,8 @@ type alias Model =
     }
 
 
-model : Model
-model =
+initialModel : Model
+initialModel =
     Model Stopped
 
 

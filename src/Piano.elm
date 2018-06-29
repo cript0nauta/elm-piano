@@ -711,7 +711,7 @@ octave note =
 -}
 isNatural : Note -> Bool
 isNatural note =
-    List.member (note % 12) [ 0, 2, 4, 5, 7, 9, 11 ]
+    List.member (modBy 12 note) [ 0, 2, 4, 5, 7, 9, 11 ]
 
 
 {-| Represent a note number as a string
@@ -723,7 +723,7 @@ noteName note =
             String.slice n (n + 1) str
 
         noteName_ =
-            getCharAt (note % 12) "CCDDEFFGGAAB"
+            getCharAt (modBy 12 note) "CCDDEFFGGAAB"
 
         alteration =
             if isNatural note then
@@ -731,4 +731,4 @@ noteName note =
             else
                 "#"
     in
-        noteName_ ++ alteration ++ toString (octave note)
+        noteName_ ++ alteration ++ String.fromInt (octave note)
