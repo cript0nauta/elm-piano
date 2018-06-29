@@ -576,7 +576,7 @@ updateInternal msg ({ notes, mouse } as state) =
 
         MouseUp ->
             let
-                notes =
+                notes_ =
                     case mouse of
                         ClickedKey note ->
                             Set.remove note state.notes
@@ -585,7 +585,7 @@ updateInternal msg ({ notes, mouse } as state) =
                             state.notes
             in
                 StateInternal
-                    notes
+                    notes_
                     NotClicked
 
         LeaveContainer ->
@@ -721,10 +721,9 @@ viewKey config note color active =
 
         onMouseDown_ msg =
             -- Use preventDefault to prevent native drag & drop feature
-            onWithOptions
+            preventDefaultOn
                 "mousedown"
-                { defaultOptions | preventDefault = True }
-                (Json.Decode.succeed msg)
+                (Json.Decode.succeed (msg, True))
     in
         if isNatural note then
             div
