@@ -1,17 +1,17 @@
 {
     "type": "package",
     "name": "sh4r3m4n/elm-piano",
-    "summary": "A simple piano component for Elm",
+    "summary": "Simple piano wigdet for Elm programming language",
     "license": "GPL-3.0",
-    "version": "2.0.2",
+    "version": "1.0.0",
     "exposed-modules": [
         "Piano",
         "Piano.PianoStyle"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {
-        "elm-lang/core": "6.0.0 <= v < 7.0.0",
-        "elm-lang/html": "3.0.0 <= v < 4.0.0"
+        "elm/core": "1.0.0 <= v < 2.0.0",
+        "elm/html": "1.0.0 <= v < 2.0.0"
     },
     "test-dependencies": {}
 }

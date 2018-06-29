@@ -1,6 +1,6 @@
 port module PlayMIDI exposing (..)
 
-import Browser exposing (Env, Page)
+import Browser exposing (Document)
 import Html as Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -12,12 +12,11 @@ import Piano
 
 main : Program () Model Msg
 main =
-    Browser.fullscreen
+    Browser.document
         { init = init
         , view = view
         , update = update
         , subscriptions = subscriptions
-        , onNavigation = Nothing
         }
 
 
@@ -35,7 +34,7 @@ type alias Model =
     }
 
 
-init : Env flags -> ( Model, Cmd Msg )
+init : () -> ( Model, Cmd Msg )
 init _ =
     let
         model =
@@ -107,7 +106,9 @@ update msg model =
 
         MidiJSLoaded ->
             -- ({model | midiJSLoaded=True}, Cmd.none)
-            ( { model | midiJSLoaded = True }, loadMIDI "midis/cabeza.mid" )
+            ( { model | midiJSLoaded = True }
+            , loadMIDI "midis/cabeza.mid"
+            )
 
         ChangePlayerStatus playerMsg ->
             let
@@ -212,7 +213,7 @@ viewHtml model =
         div [] [ text "MIDI.js not loaded" ]
 
 
-view : Model -> Page Msg
+view : Model -> Document Msg
 view model =
     { title = "Play MIDI"
     , body = [viewHtml model] }
