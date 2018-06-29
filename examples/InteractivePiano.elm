@@ -31,8 +31,8 @@ type alias Model =
     }
 
 
-init : ( Model, Cmd Msg )
-init =
+init : () -> ( Model, Cmd Msg )
+init _ =
     ( Model
         False
         Piano.initialState
@@ -111,14 +111,18 @@ view : Model -> Browser.Document Msg
 view model =
     let
         pianoConfig =
-            Piano.config model.pianoSize
+            Piano.makeConfig model.pianoSize
                 |> Piano.interactive PianoEvent
     in
         if model.midiJSLoaded then
-            div []
+            { title = "Interactive Piano"
+            , body =
                 [ Piano.view pianoConfig model.pianoState
                 , debugNotes model.pianoState
                 , sizeSelector ChangePianoSize
                 ]
+            }
         else
-            div [] [ text "MIDI.js not loaded" ]
+            { title = "Loading..."
+            , body = [ text "MIDI.js not loaded" ]
+            }

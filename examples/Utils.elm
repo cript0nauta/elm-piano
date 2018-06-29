@@ -16,7 +16,7 @@ sizeSelector msg =
                     Tuple.second size - Tuple.first size + 1
             in
                 button [ onClick (msg size) ]
-                    [ text (toString keys ++ "-key piano") ]
+                    [ text (String.fromInt keys ++ "-key piano") ]
     in
         List.map keyboardSizeOption
             [ keyboard12Keys
@@ -33,7 +33,7 @@ sizeSelector msg =
 debugNotes : State -> Html msg
 debugNotes state =
     div
-        [ style [ ( "text-align", "center" ) ] ]
+        [ style "text-align" "center" ]
         [ text <|
             "Currently pressed notes: "
                 ++ String.join ", "
