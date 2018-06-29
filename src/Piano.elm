@@ -3,7 +3,7 @@ module Piano
         ( Msg
         , Note
         , Config
-        , config
+        , makeConfig
         , State
         , CurrentNotes
         , activeNotes
@@ -197,7 +197,7 @@ type alias ConfigInternal msg =
     { noteRange : ( Note, Note )
     , pressedKeyColors : Dict Note Color.Color
     , unpressedKeyColors : Dict Note Color.Color
-    , update : Maybe (Msg -> msg)
+    , updateFunction : Maybe (Msg -> msg)
     }
 
 
@@ -209,11 +209,11 @@ should be displayed. You can use one of the values described in
 
     pianoConfig : Piano.Config msg
     pianoConfig =
-        Piano.config Piano.keyboard88Keys
+        Piano.makeConfig Piano.keyboard88Keys
 
 -}
-config : ( Note, Note ) -> Config msg
-config noteRange =
+makeConfig : ( Note, Note ) -> Config msg
+makeConfig noteRange =
     Config <|
         ConfigInternal
             noteRange
@@ -236,9 +236,9 @@ Pass it a constructor that wraps an internal message into your own message
 type. In other libraries this would be what you pass to the `Html.map` function
 
 -}
-interactive : (Msg -> yourMsg) -> Config a -> Config yourMsg
+interactive : (Msg -> yourMsg) -> Config yourMsg -> Config yourMsg
 interactive f (Config config) =
-    Config { config | update = Just f }
+    Config { config | updateFunction = Just f }
 
 
 {-| The view's internal state. You should keep this on your model
@@ -571,7 +571,7 @@ view (Config config) (State { notes }) =
             in
                 rgba red green blue alpha
     in
-        span [ style [ ( "text-align", "center" ) ] ]
+        span [ style "text-align" "center" ]
             ([ container <|
                 List.map
                     (\note ->
@@ -687,8 +687,8 @@ viewKey config note color active =
 
 
 event : ConfigInternal msg -> (msg -> Attribute msg) -> Msg -> List (Attribute msg) -> List (Attribute msg)
-event { update } f internalMsg attrs =
-    case update of
+event { updateFunction } f internalMsg attrs =
+    case updateFunction of
         Just wrapperMsg ->
             (f <| (wrapperMsg internalMsg)) :: attrs
 

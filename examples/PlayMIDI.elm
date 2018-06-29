@@ -46,7 +46,7 @@ init _ =
             , midiFileLoaded = False
             , midiError = (Just "Not loaded")
             , colored = True
-            , playerInfo = PlayerController.model
+            , playerInfo = PlayerController.initialModel
             , pianoState = Piano.initialState
             }
     in
@@ -264,7 +264,7 @@ viewHtml model =
                     []
                 )
             , Piano.view
-                (Piano.config Piano.keyboard88Keys
+                (Piano.makeConfig Piano.keyboard88Keys
                     |> setPianoColors model.colored
                 )
                 model.pianoState
