@@ -100,6 +100,7 @@ the user to select the notes by clicking on the piano keys.
 import Css exposing (..)
 import Color
 import Dict exposing (Dict)
+import Json.Decode
 import Html
 import Html.Styled exposing (..)
 import Html.Styled.Attributes exposing (..)
@@ -244,16 +245,26 @@ interactive f (Config config) =
 {-| The view's internal state. You should keep this on your model
 -}
 type State
-    = State
-        { notes : Set Note
-        }
+    = State StateInternal
+
+
+type alias StateInternal =
+    { notes : Set Note
+    , mouse : MouseStatus
+    }
+
+
+type MouseStatus
+    = NotClicked
+    | ClickedOutsideKeys
+    | ClickedKey Note
 
 
 {-| Contructor for the State type
 -}
 initialState : State
 initialState =
-    State { notes = Set.empty }
+    State { notes = Set.empty, mouse = NotClicked }
 
 
 {-| Set the currently pressed notes of the piano
@@ -265,8 +276,8 @@ initialState =
 
 -}
 setNotes : Set Note -> State -> State
-setNotes notes _ =
-    State { notes = notes }
+setNotes notes (State state) =
+    State { state | notes = notes }
 
 
 {-| Returns the currently pressed notes of a State
@@ -297,8 +308,8 @@ getNotes (State { notes }) =
 
 -}
 updateNotes : (Set Note -> Set Note) -> State -> State
-updateNotes f (State { notes }) =
-    State { notes = f notes }
+updateNotes f (State state) =
+    State { state | notes = f state.notes }
 
 
 colorKeys : Color.Color -> Color.Color -> Dict Note Color.Color
@@ -407,8 +418,11 @@ keyboard88Keys =
 {-| An opaque type representing messages that are passed inside the Piano view.
 -}
 type Msg
-    = KeyUp Note
-    | KeyDown Note
+    = Enter Note
+    | Leave Note
+    | Click Note
+    | MouseUp
+    | LeaveContainer
 
 
 {-| A data structure used for child-parent communication in the `update` function
@@ -493,8 +507,8 @@ in your code, like sending messages to a port producing sound
 update : Msg -> State -> ( State, CurrentNotes )
 update msg (State oldState) =
     let
-        toTuple : State -> ( State, CurrentNotes )
-        toTuple (State newState) =
+        toTuple : StateInternal -> ( State, CurrentNotes )
+        toTuple newState =
             ( State newState
             , CurrentNotes
                 { old = (oldState.notes)
@@ -503,17 +517,81 @@ update msg (State oldState) =
             )
     in
         toTuple <|
-            updateInternal msg (State oldState)
+            updateInternal msg (oldState)
 
 
-updateInternal : Msg -> State -> State
-updateInternal msg (State { notes }) =
+updateInternal : Msg -> StateInternal -> StateInternal
+updateInternal msg ({ notes, mouse } as state) =
     case msg of
-        KeyUp note ->
-            State { notes = Set.remove note notes }
+        Enter note ->
+            case mouse of
+                NotClicked ->
+                    state
 
-        KeyDown note ->
-            State { notes = Set.insert note notes }
+                ClickedOutsideKeys ->
+                    StateInternal
+                        (Set.insert note notes)
+                        (ClickedKey note)
+
+                ClickedKey oldNote ->
+                    StateInternal
+                        (notes
+                            |> Set.remove oldNote
+                            |> Set.insert note
+                        )
+                        (ClickedKey note)
+
+        Leave leaveNote ->
+            case mouse of
+                NotClicked ->
+                    state
+
+                ClickedOutsideKeys ->
+                    state
+                        |> Debug.log "Piano: detected note leave with mouse outside piano keys"
+
+                ClickedKey clickNote ->
+                    let
+                        debug =
+                            if clickNote == leaveNote then
+                                state
+                            else
+                                state
+                                    |> Debug.log "Piano: detected note leave with different pressed note"
+                    in
+                        StateInternal
+                            (Set.remove leaveNote notes)
+                            ClickedOutsideKeys
+
+        Click note ->
+            case mouse of
+                NotClicked ->
+                    StateInternal
+                        (Set.insert note state.notes)
+                        (ClickedKey note)
+
+                _ ->
+                    state
+                        |> Debug.log "Piano: detected click event with the mouse already clicked. Check this"
+
+        MouseUp ->
+            let
+                notes =
+                    case mouse of
+                        ClickedKey note ->
+                            Set.remove note state.notes
+
+                        _ ->
+                            state.notes
+            in
+                StateInternal
+                    notes
+                    NotClicked
+
+        LeaveContainer ->
+            -- MouseUp events that happen outside the container won't be
+            -- registered, so it's better to force the status to be not clicked
+            { state | mouse = NotClicked }
 
 
 
@@ -534,11 +612,15 @@ view (Config config) (State { notes }) =
     let
         container inner =
             div
-                [ css
-                    [ padding (px 5)
-                    , margin2 (px 0) auto
-                    ]
-                ]
+                (List.singleton
+                    (css
+                        [ padding (px 5)
+                        , margin2 (px 0) auto
+                        ]
+                    )
+                    |> event config onMouseUp MouseUp
+                    |> event config onMouseLeave LeaveContainer
+                )
                 [ div
                     [ css
                         [ textAlign center
@@ -636,6 +718,13 @@ viewKey config note color active =
                 hex "#55AA55"
             else
                 hex "#000000"
+
+        onMouseDown_ msg =
+            -- Use preventDefault to prevent native drag & drop feature
+            onWithOptions
+                "mousedown"
+                { defaultOptions | preventDefault = True }
+                (Json.Decode.succeed msg)
     in
         if isNatural note then
             div
@@ -651,10 +740,9 @@ viewKey config note color active =
                         , zIndex (int 1)
                         ]
                     )
-                    |> event config onMouseDown (KeyDown note)
-                    |> event config
-                        onMouseUp
-                        (KeyUp note)
+                    |> event config onMouseEnter (Enter note)
+                    |> event config onMouseLeave (Leave note)
+                    |> event config onMouseDown_ (Click note)
                 )
                 []
         else
@@ -679,8 +767,9 @@ viewKey config note color active =
                             , keysBoderStyle
                             ]
                         )
-                        |> event config onMouseDown (KeyDown note)
-                        |> event config onMouseUp (KeyUp note)
+                        |> event config onMouseEnter (Enter note)
+                        |> event config onMouseLeave (Leave note)
+                        |> event config onMouseDown_ (Click note)
                     )
                     []
                 ]
