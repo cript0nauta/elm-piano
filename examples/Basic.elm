@@ -29,8 +29,10 @@ model =
 
         -- Show the notes D, F#, A in all the octaves
         shouldDisplayNote : Piano.Note -> Bool
-        shouldDisplayNote =
-            flip rem 12 >> flip List.member dMajorKeys
+        shouldDisplayNote note =
+            List.member
+                (remainderBy 12 note)
+                dMajorKeys
 
         notes =
             Piano.allNotes
@@ -52,7 +54,7 @@ view { pianoState } =
     let
         pianoConfig : Piano.Config msg
         pianoConfig =
-            Piano.config Piano.keyboard88Keys
+            Piano.makeConfig Piano.keyboard88Keys
                 |> Piano.colorAllPressedKeys Color.lightOrange Color.darkOrange
     in
         Piano.view pianoConfig pianoState
