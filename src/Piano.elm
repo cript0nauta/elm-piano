@@ -13,9 +13,9 @@ module Piano
         , setNotes
         , getNotes
         , updateNotes
-        , interactive
         , update
-        , view
+        , viewStatic
+        , viewInteractive
         , colorAllPressedKeys
         , colorAllUnpressedKeys
         , colorPressedKeys
@@ -115,39 +115,6 @@ import String
 --         , update = update
 --         , view = view
 --         }
--- MODEL
-
-
-{-| The model of the component.
-
-notes is the set of currently pressed notes.
-
-noteRange determines the first and last notes shown in keyboard.
-
-If interactive is True, the component will generate KeyUp and KeyDown messages
-when the user clicks on a note. (Now this mode is experimental and has some
-UI issues).
-
-If showSizeSelector is True a button group will be shown to select the keyboard
-size.
-
-If debugNotes is True a text will appear, showing the note names of each
-currently pressed note.
-
-pressedKeyColors and unpressedKeyColors are dictionaries that override the
-default color of the keys when they are, respectively, pressed or unpressed,
-so they allow the user to specify custom colors for each keys
-
--}
-type alias Model =
-    { notes : Set Note
-    , noteRange : ( Note, Note )
-    , interactive : Bool
-    , showSizeSelector : Bool
-    , debugNotes : Bool
-    , pressedKeyColors : Dict Note Color.Color
-    , unpressedKeyColors : Dict Note Color.Color
-    }
 
 
 {-| Represents a note giving its MIDI Note Number
@@ -166,39 +133,20 @@ allNotes =
     List.range 0 127
 
 
-{-| Common initial configuration for the component
-
-Now it starts with no keys being pressed in a 25-key keyboard, in interactive
-mode and without the size selector nor the note debugger.
-
--}
-initialModel : Model
-initialModel =
-    { notes = Set.empty
-    , noteRange = keyboard25Keys
-    , interactive = True
-    , showSizeSelector = False
-    , debugNotes = False
-    , pressedKeyColors = Dict.empty
-    , unpressedKeyColors = Dict.empty
-    }
-
-
 {-| Configuration for the view.
 
 **Note:** This should *never* be held in your model, since it is related
 to the `view` code.
 
 -}
-type Config msg
-    = Config (ConfigInternal msg)
+type Config
+    = Config ConfigInternal
 
 
-type alias ConfigInternal msg =
+type alias ConfigInternal =
     { noteRange : ( Note, Note )
     , pressedKeyColors : Dict Note Color.Color
     , unpressedKeyColors : Dict Note Color.Color
-    , updateFunction : Maybe (Msg -> msg)
     }
 
 
@@ -208,38 +156,18 @@ It takes as its only argument a tuple holding the first and last notes that
 should be displayed. You can use one of the values described in
 [Keyboard size helpers](#keyboard-size-helpers) or specify your own.
 
-    pianoConfig : Piano.Config msg
+    pianoConfig : Piano.Config
     pianoConfig =
         Piano.makeConfig Piano.keyboard88Keys
 
 -}
-makeConfig : ( Note, Note ) -> Config msg
+makeConfig : ( Note, Note ) -> Config
 makeConfig noteRange =
     Config <|
         ConfigInternal
             noteRange
             Dict.empty
             Dict.empty
-            Nothing
-
-
-{-| Sets up interactive mode for the view
-
-    type Msg
-        = PianoEvent Piano.Msg
-        | OtherEvent
-
-    pianoConfig =
-        Piano.config Piano.keyboard88Keys
-            |> Piano.interactive PianoEvent
-
-Pass it a constructor that wraps an internal message into your own message
-type. In other libraries this would be what you pass to the `Html.map` function
-
--}
-interactive : (Msg -> yourMsg) -> Config yourMsg -> Config yourMsg
-interactive f (Config config) =
-    Config { config | updateFunction = Just f }
 
 
 {-| The view's internal state. You should keep this on your model
@@ -330,7 +258,7 @@ colorKeys white black =
 {-| Does the same that colorAllUnpressedKeys, but sets the color of the
 pressed keys instead
 -}
-colorAllPressedKeys : Color.Color -> Color.Color -> Config msg -> Config msg
+colorAllPressedKeys : Color.Color -> Color.Color -> Config -> Config
 colorAllPressedKeys white black (Config config) =
     Config { config | pressedKeyColors = colorKeys white black }
 
@@ -346,14 +274,14 @@ that order.
             |> Piano.colorAllUnpressedKeys Color.lightOrange Color.darkOrange
 
 -}
-colorAllUnpressedKeys : Color.Color -> Color.Color -> Config msg -> Config msg
+colorAllUnpressedKeys : Color.Color -> Color.Color -> Config -> Config
 colorAllUnpressedKeys white black (Config config) =
     Config { config | unpressedKeyColors = colorKeys white black }
 
 
 {-| Same as `colorUnpressedKeys` but changes the color of pressed keys instead.
 -}
-colorPressedKeys : Dict Note Color.Color -> Config msg -> Config msg
+colorPressedKeys : Dict Note Color.Color -> Config -> Config
 colorPressedKeys d (Config config) =
     Config { config | pressedKeyColors = d }
 
@@ -364,7 +292,7 @@ Use it when the two functions above don't satisfy your needs (you probably
 want to use different colors for each note)
 
 -}
-colorUnpressedKeys : Dict Note Color.Color -> Config msg -> Config msg
+colorUnpressedKeys : Dict Note Color.Color -> Config -> Config
 colorUnpressedKeys d (Config config) =
     Config { config | unpressedKeyColors = d }
 
@@ -598,7 +526,7 @@ updateInternal msg ({ notes, mouse } as state) =
 -- VIEW
 
 
-{-| Show the piano given its configuration and its state.
+{-| Show an interactive piano given its configuration and its state.
 
 **Note**: The piano `State` should live in your model, but the `Config` shouldn't,
 since it belongs to your `view` code. For more information about why you should
@@ -607,8 +535,19 @@ do this read
 (it was done for the great `elm-sortable-table` library whose API inspired me).
 
 -}
-view : Config msg -> State -> Html.Html msg
-view (Config config) (State { notes }) =
+viewInteractive : Config -> State -> Html.Html Msg
+viewInteractive (Config config) state =
+    view (Just identity) config state
+
+viewStatic : Config -> Set Note -> Html.Html Never
+viewStatic (Config config) notes =
+    view
+        Nothing
+        config
+        (setNotes notes initialState)
+
+view : Maybe (Msg -> msg) -> ConfigInternal -> State -> Html.Html msg
+view updateFunction config (State { notes }) =
     let
         container inner =
             div
@@ -618,8 +557,8 @@ view (Config config) (State { notes }) =
                         , margin2 (px 0) auto
                         ]
                     )
-                    |> event config onMouseUp MouseUp
-                    |> event config onMouseLeave LeaveContainer
+                    |> event updateFunction onMouseUp MouseUp
+                    |> event updateFunction onMouseLeave LeaveContainer
                 )
                 [ div
                     [ css
@@ -669,7 +608,7 @@ view (Config config) (State { notes }) =
                                 )
                         in
                             viewKey
-                                config
+                                updateFunction
                                 note
                                 (Dict.get note colorDict
                                     |> Maybe.map nativeColorToCss
@@ -684,8 +623,8 @@ view (Config config) (State { notes }) =
 
 {-| Helper function to render a single note
 -}
-viewKey : ConfigInternal msg -> Note -> Maybe Color -> Bool -> Html msg
-viewKey config note color active =
+viewKey : Maybe (Msg -> msg) -> Note -> Maybe Color -> Bool -> Html msg
+viewKey updateFunction note color active =
     let
         blackWhiteStyle : Style
         blackWhiteStyle =
@@ -739,9 +678,9 @@ viewKey config note color active =
                         , zIndex (int 1)
                         ]
                     )
-                    |> event config onMouseEnter (Enter note)
-                    |> event config onMouseLeave (Leave note)
-                    |> event config onMouseDown_ (Click note)
+                    |> event updateFunction onMouseEnter (Enter note)
+                    |> event updateFunction onMouseLeave (Leave note)
+                    |> event updateFunction onMouseDown_ (Click note)
                 )
                 []
         else
@@ -766,16 +705,16 @@ viewKey config note color active =
                             , keysBoderStyle
                             ]
                         )
-                        |> event config onMouseEnter (Enter note)
-                        |> event config onMouseLeave (Leave note)
-                        |> event config onMouseDown_ (Click note)
+                        |> event updateFunction onMouseEnter (Enter note)
+                        |> event updateFunction onMouseLeave (Leave note)
+                        |> event updateFunction onMouseDown_ (Click note)
                     )
                     []
                 ]
 
 
-event : ConfigInternal msg -> (msg -> Attribute msg) -> Msg -> List (Attribute msg) -> List (Attribute msg)
-event { updateFunction } f internalMsg attrs =
+event : Maybe (Msg -> msg) -> (msg -> Attribute msg) -> Msg -> List (Attribute msg) -> List (Attribute msg)
+event updateFunction f internalMsg attrs =
     case updateFunction of
         Just wrapperMsg ->
             (f <| (wrapperMsg internalMsg)) :: attrs

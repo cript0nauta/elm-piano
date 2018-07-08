@@ -6,22 +6,8 @@ import Set
 import Piano
 
 
-main : Html msg
-main =
-    view model
-
-
-
--- MODEL
-
-
-type alias Model =
-    { pianoState : Piano.State
-    }
-
-
-model : Model
-model =
+notes : Set.Set Piano.Note
+notes =
     let
         -- D, F#, A
         dMajorKeys =
@@ -33,28 +19,22 @@ model =
             List.member
                 (remainderBy 12 note)
                 dMajorKeys
-
-        notes =
-            Piano.allNotes
-                |> List.filter shouldDisplayNote
-                |> Set.fromList
     in
-        Model
-            (Piano.initialState
-                |> Piano.setNotes notes
-            )
+    Piano.allNotes
+        |> List.filter shouldDisplayNote
+        |> Set.fromList
 
 
 
 -- VIEW
 
 
-view : Model -> Html msg
-view { pianoState } =
+main : Html Never
+main =
     let
-        pianoConfig : Piano.Config msg
+        pianoConfig : Piano.Config
         pianoConfig =
             Piano.makeConfig Piano.keyboard88Keys
                 |> Piano.colorAllPressedKeys Color.lightOrange Color.darkOrange
     in
-        Piano.view pianoConfig pianoState
+        Piano.viewStatic pianoConfig notes
