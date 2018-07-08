@@ -112,12 +112,14 @@ view model =
     let
         pianoConfig =
             Piano.makeConfig model.pianoSize
-                |> Piano.interactive PianoEvent
     in
         if model.midiJSLoaded then
             { title = "Interactive Piano"
             , body =
-                [ Piano.view pianoConfig model.pianoState
+                [ Piano.viewInteractive
+                    pianoConfig
+                    model.pianoState
+                    |> Html.map PianoEvent
                 , debugNotes model.pianoState
                 , sizeSelector ChangePianoSize
                 ]

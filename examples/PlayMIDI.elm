@@ -32,7 +32,7 @@ type alias Model =
     , midiFileLoaded : Bool
     , midiError : Maybe String
     , playerInfo : PlayerController.Model
-    , pianoState : Piano.State
+    , notes : Set.Set Piano.Note
     , colored : Bool
     }
 
@@ -47,7 +47,7 @@ init _ =
             , midiError = (Just "Not loaded")
             , colored = True
             , playerInfo = PlayerController.initialModel
-            , pianoState = Piano.initialState
+            , notes = Set.empty
             }
     in
         ( model, Cmd.none )
@@ -75,7 +75,7 @@ colorWheelKeys saturation lightness l =
             |> Dict.fromList
 
 
-setPianoColors : Bool -> Piano.Config msg -> Piano.Config msg
+setPianoColors : Bool -> Piano.Config -> Piano.Config
 setPianoColors colored config =
     let
         pressedKeysDict =
@@ -174,20 +174,12 @@ update msg model =
                 ( { model | playerInfo = playerModel }, cmd )
 
         NoteOn note ->
-            let
-                newPiano =
-                    model.pianoState
-                        |> Piano.updateNotes (Set.insert note)
-            in
-                ( { model | pianoState = newPiano }, Cmd.none )
+            ( { model | notes = Set.insert note model.notes }
+            , Cmd.none )
 
         NoteOff note ->
-            let
-                newPiano =
-                    model.pianoState
-                        |> Piano.updateNotes (Set.remove note)
-            in
-                ( { model | pianoState = newPiano }, Cmd.none )
+            ( { model | notes = Set.remove note model.notes }
+            , Cmd.none )
 
         ToggleColored ->
             ( { model
@@ -263,11 +255,12 @@ viewHtml model =
                  else
                     []
                 )
-            , Piano.view
+            , Piano.viewStatic
                 (Piano.makeConfig Piano.keyboard88Keys
                     |> setPianoColors model.colored
                 )
-                model.pianoState
+                model.notes
+                |> Html.map never
             ]
     else
         div [] [ text "MIDI.js not loaded" ]
