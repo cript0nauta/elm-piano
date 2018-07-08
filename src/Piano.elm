@@ -107,6 +107,7 @@ import Html.Styled.Attributes exposing (..)
 import Html.Styled.Events exposing (..)
 import Set exposing (Set)
 import String
+import Piano.TouchEvents as Touch exposing (Touch, TouchEvent)
 
 
 -- main =
@@ -177,7 +178,7 @@ type State
 
 
 type alias StateInternal =
-    { notes : Set Note
+    { touches : Dict String Note
     , mouse : MouseStatus
     }
 
@@ -192,7 +193,21 @@ type MouseStatus
 -}
 initialState : State
 initialState =
-    State { notes = Set.empty, mouse = NotClicked }
+    State { touches = Dict.empty, mouse = NotClicked }
+
+
+notes : StateInternal -> Set Note
+notes state =
+    let
+        mouseNotes =
+            case state.mouse of
+                ClickedKey note ->
+                    [ note ]
+                _ ->
+                    []
+    in
+    Set.fromList <|
+        mouseNotes ++ Dict.values state.touches
 
 
 {-| Set the currently pressed notes of the piano
@@ -204,8 +219,8 @@ initialState =
 
 -}
 setNotes : Set Note -> State -> State
-setNotes notes (State state) =
-    State { state | notes = notes }
+setNotes desiredNotes (State state) =
+    Debug.todo "not implemented"
 
 
 {-| Returns the currently pressed notes of a State
@@ -222,8 +237,8 @@ setNotes notes (State state) =
 
 -}
 getNotes : State -> Set Note
-getNotes (State { notes }) =
-    notes
+getNotes (State state) =
+    notes state
 
 
 {-| Changes the currently pressed notes of a State
@@ -237,7 +252,7 @@ getNotes (State { notes }) =
 -}
 updateNotes : (Set Note -> Set Note) -> State -> State
 updateNotes f (State state) =
-    State { state | notes = f state.notes }
+    Debug.todo "not implemented"
 
 
 colorKeys : Color.Color -> Color.Color -> Dict Note Color.Color
@@ -351,6 +366,8 @@ type Msg
     | Click Note
     | MouseUp
     | LeaveContainer
+    | TouchStart Note TouchEvent
+    | TouchEnd TouchEvent
 
 
 {-| A data structure used for child-parent communication in the `update` function
@@ -439,8 +456,8 @@ update msg (State oldState) =
         toTuple newState =
             ( State newState
             , CurrentNotes
-                { old = (oldState.notes)
-                , new = (newState.notes)
+                { old = (notes oldState)
+                , new = (notes newState)
                 }
             )
     in
@@ -449,28 +466,21 @@ update msg (State oldState) =
 
 
 updateInternal : Msg -> StateInternal -> StateInternal
-updateInternal msg ({ notes, mouse } as state) =
+updateInternal msg state =
     case msg of
         Enter note ->
-            case mouse of
+            case state.mouse of
                 NotClicked ->
                     state
 
                 ClickedOutsideKeys ->
-                    StateInternal
-                        (Set.insert note notes)
-                        (ClickedKey note)
+                    { state | mouse = ClickedKey note }
 
                 ClickedKey oldNote ->
-                    StateInternal
-                        (notes
-                            |> Set.remove oldNote
-                            |> Set.insert note
-                        )
-                        (ClickedKey note)
+                    { state | mouse = ClickedKey note }
 
         Leave leaveNote ->
-            case mouse of
+            case state.mouse of
                 NotClicked ->
                     state
 
@@ -487,39 +497,44 @@ updateInternal msg ({ notes, mouse } as state) =
                                 state
                                     |> Debug.log "Piano: detected note leave with different pressed note"
                     in
-                        StateInternal
-                            (Set.remove leaveNote notes)
-                            ClickedOutsideKeys
+                        { state | mouse = ClickedOutsideKeys }
 
         Click note ->
-            case mouse of
+            case state.mouse of
                 NotClicked ->
-                    StateInternal
-                        (Set.insert note state.notes)
-                        (ClickedKey note)
+                    { state | mouse = ClickedKey note }
 
                 _ ->
                     state
                         |> Debug.log "Piano: detected click event with the mouse already clicked. Check this"
 
         MouseUp ->
-            let
-                notes_ =
-                    case mouse of
-                        ClickedKey note ->
-                            Set.remove note state.notes
-
-                        _ ->
-                            state.notes
-            in
-                StateInternal
-                    notes_
-                    NotClicked
+            { state | mouse = NotClicked }
 
         LeaveContainer ->
             -- MouseUp events that happen outside the container won't be
             -- registered, so it's better to force the status to be not clicked
             { state | mouse = NotClicked }
+
+        TouchStart note {touches} ->
+            let
+                newTouches =
+                    List.map
+                        (\touch ->
+                            ( touch.identifier, note )
+                        )
+                        touches
+                        |> Dict.fromList
+            in
+            { state | touches = Dict.union newTouches state.touches }
+
+        TouchEnd {touches} ->
+            { state | touches =
+                List.foldl
+                    (.identifier >> Dict.remove)
+                    state.touches
+                    touches
+            }
 
 
 
@@ -540,14 +555,14 @@ viewInteractive (Config config) state =
     view (Just identity) config state
 
 viewStatic : Config -> Set Note -> Html.Html Never
-viewStatic (Config config) notes =
+viewStatic (Config config) desiredNotes =
     view
         Nothing
         config
-        (setNotes notes initialState)
+        (setNotes desiredNotes initialState)
 
 view : Maybe (Msg -> msg) -> ConfigInternal -> State -> Html.Html msg
-view updateFunction config (State { notes }) =
+view updateFunction config (State state) =
     let
         container inner =
             div
@@ -598,7 +613,7 @@ view updateFunction config (State { notes }) =
                     (\note ->
                         let
                             active =
-                                (Set.member note notes)
+                                (Set.member note (notes state))
 
                             colorDict =
                                 (if active then
@@ -681,6 +696,8 @@ viewKey updateFunction note color active =
                     |> event updateFunction onMouseEnter (Enter note)
                     |> event updateFunction onMouseLeave (Leave note)
                     |> event updateFunction onMouseDown_ (Click note)
+                    |> touchHelper updateFunction Touch.onTouchStart (TouchStart note)
+                    |> touchHelper updateFunction Touch.onTouchEnd TouchEnd
                 )
                 []
         else
@@ -708,6 +725,8 @@ viewKey updateFunction note color active =
                         |> event updateFunction onMouseEnter (Enter note)
                         |> event updateFunction onMouseLeave (Leave note)
                         |> event updateFunction onMouseDown_ (Click note)
+                        |> touchHelper updateFunction Touch.onTouchStart (TouchStart note)
+                        |> touchHelper updateFunction Touch.onTouchEnd TouchEnd
                     )
                     []
                 ]
@@ -722,6 +741,14 @@ event updateFunction f internalMsg attrs =
         Nothing ->
             attrs
 
+
+touchHelper updateFunction f m attrs =
+    case updateFunction of
+        Just wrapper ->
+            (f (wrapper << m)) :: attrs
+
+        Nothing ->
+            attrs
 
 
 -- Note helpers
