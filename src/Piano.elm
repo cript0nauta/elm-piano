@@ -541,6 +541,36 @@ updateInternal msg state =
 -- VIEW
 
 
+type MessageType msg
+    = NoMessages
+    | WithMessages (Msg -> msg)
+
+
+withMessages : MessageType Msg
+withMessages =
+    WithMessages identity
+
+
+attrs : MessageType msg -> List (Attribute Never) -> List (Attribute Msg) -> List (Attribute msg)
+attrs mt static stateful =
+    let
+        mappedStatic =
+            List.map
+                (Html.Styled.Attributes.map never)
+                static
+    in
+        case mt of
+            NoMessages ->
+                mappedStatic
+
+            WithMessages f ->
+                List.append
+                    mappedStatic
+                    (List.map
+                        (Html.Styled.Attributes.map f)
+                        stateful)
+
+
 {-| Show an interactive piano given its configuration and its state.
 
 **Note**: The piano `State` should live in your model, but the `Config` shouldn't,
@@ -552,28 +582,29 @@ do this read
 -}
 viewInteractive : Config -> State -> Html.Html Msg
 viewInteractive (Config config) state =
-    view (Just identity) config state
+    view withMessages config state
 
 viewStatic : Config -> Set Note -> Html.Html Never
 viewStatic (Config config) desiredNotes =
     view
-        Nothing
+        NoMessages
         config
         (setNotes desiredNotes initialState)
 
-view : Maybe (Msg -> msg) -> ConfigInternal -> State -> Html.Html msg
-view updateFunction config (State state) =
+view : MessageType msg -> ConfigInternal -> State -> Html.Html msg
+view mt config (State state) =
     let
         container inner =
             div
-                (List.singleton
-                    (css
+                (attrs mt
+                    [ css
                         [ padding (px 5)
                         , margin2 (px 0) auto
                         ]
-                    )
-                    |> event updateFunction onMouseUp MouseUp
-                    |> event updateFunction onMouseLeave LeaveContainer
+                    ]
+                    [ onMouseUp MouseUp
+                    , onMouseLeave LeaveContainer
+                    ]
                 )
                 [ div
                     [ css
@@ -623,7 +654,7 @@ view updateFunction config (State state) =
                                 )
                         in
                             viewKey
-                                updateFunction
+                                mt
                                 note
                                 (Dict.get note colorDict
                                     |> Maybe.map nativeColorToCss
@@ -638,8 +669,8 @@ view updateFunction config (State state) =
 
 {-| Helper function to render a single note
 -}
-viewKey : Maybe (Msg -> msg) -> Note -> Maybe Color -> Bool -> Html msg
-viewKey updateFunction note color active =
+viewKey : MessageType msg -> Note -> Maybe Color -> Bool -> Html msg
+viewKey mt note color active =
     let
         blackWhiteStyle : Style
         blackWhiteStyle =
@@ -681,8 +712,8 @@ viewKey updateFunction note color active =
     in
         if isNatural note then
             div
-                (List.singleton
-                    (css
+                (attrs mt
+                    [ css
                         [ blackWhiteStyle
                         , keysBoderStyle
                         , Css.width (px 24)
@@ -692,12 +723,13 @@ viewKey updateFunction note color active =
                             |> backgroundColor
                         , zIndex (int 1)
                         ]
-                    )
-                    |> event updateFunction onMouseEnter (Enter note)
-                    |> event updateFunction onMouseLeave (Leave note)
-                    |> event updateFunction onMouseDown_ (Click note)
-                    |> touchHelper updateFunction Touch.onTouchStart (TouchStart note)
-                    |> touchHelper updateFunction Touch.onTouchEnd TouchEnd
+                    ]
+                    [ onMouseEnter (Enter note)
+                    , onMouseLeave (Leave note)
+                    , onMouseDown_ (Click note)
+                    , Touch.onTouchStart (TouchStart note)
+                    , Touch.onTouchEnd TouchEnd
+                    ]
                 )
                 []
         else
@@ -710,8 +742,8 @@ viewKey updateFunction note color active =
                     ]
                 ]
                 [ div
-                    (List.singleton
-                        (css
+                    (attrs mt
+                        [ css
                             [ Css.width (px 16)
                             , Css.height (px 70)
                             , position relative
@@ -721,34 +753,16 @@ viewKey updateFunction note color active =
                                 |> backgroundColor
                             , keysBoderStyle
                             ]
-                        )
-                        |> event updateFunction onMouseEnter (Enter note)
-                        |> event updateFunction onMouseLeave (Leave note)
-                        |> event updateFunction onMouseDown_ (Click note)
-                        |> touchHelper updateFunction Touch.onTouchStart (TouchStart note)
-                        |> touchHelper updateFunction Touch.onTouchEnd TouchEnd
+                        ]
+                        [ onMouseEnter (Enter note)
+                        , onMouseLeave (Leave note)
+                        , onMouseDown_ (Click note)
+                        , Touch.onTouchStart (TouchStart note)
+                        , Touch.onTouchEnd TouchEnd
+                        ]
                     )
                     []
                 ]
-
-
-event : Maybe (Msg -> msg) -> (msg -> Attribute msg) -> Msg -> List (Attribute msg) -> List (Attribute msg)
-event updateFunction f internalMsg attrs =
-    case updateFunction of
-        Just wrapperMsg ->
-            (f <| (wrapperMsg internalMsg)) :: attrs
-
-        Nothing ->
-            attrs
-
-
-touchHelper updateFunction f m attrs =
-    case updateFunction of
-        Just wrapper ->
-            (f (wrapper << m)) :: attrs
-
-        Nothing ->
-            attrs
 
 
 -- Note helpers
