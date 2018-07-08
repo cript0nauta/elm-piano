@@ -97,6 +97,7 @@ the user to select the notes by clicking on the piano keys.
 
 -}
 
+import Browser.Dom
 import Css exposing (..)
 import Color
 import Dict exposing (Dict)
@@ -107,6 +108,7 @@ import Html.Styled.Attributes exposing (..)
 import Html.Styled.Events exposing (..)
 import Set exposing (Set)
 import String
+import Task exposing (Task)
 import Piano.TouchEvents as Touch exposing (Touch, TouchEvent)
 
 
@@ -180,7 +182,18 @@ type State
 type alias StateInternal =
     { touches : Dict String Note
     , mouse : MouseStatus
+    , keyCoordinates : KeyCoordinates
     }
+
+type alias KeyCoordinates =
+    List
+        ( Note
+        , { x : Float
+          , y : Float
+          , width : Float
+          , height : Float
+          }
+        )
 
 
 type MouseStatus
@@ -193,7 +206,10 @@ type MouseStatus
 -}
 initialState : State
 initialState =
-    State { touches = Dict.empty, mouse = NotClicked }
+    State
+        { touches = Dict.empty
+        , keyCoordinates = []
+        , mouse = NotClicked }
 
 
 notes : StateInternal -> Set Note
@@ -368,6 +384,8 @@ type Msg
     | LeaveContainer
     | TouchStart Note TouchEvent
     | TouchEnd TouchEvent
+    | TouchMove TouchEvent
+    | SetKeyCoordinates KeyCoordinates
 
 
 {-| A data structure used for child-parent communication in the `update` function
@@ -449,27 +467,53 @@ in your code, like sending messages to a port producing sound
                     { model | piano = newPianoState }
 
 -}
-update : Msg -> State -> ( State, CurrentNotes )
+update : Msg -> State -> ( State, CurrentNotes, Cmd Msg )
 update msg (State oldState) =
     let
-        toTuple : StateInternal -> ( State, CurrentNotes )
-        toTuple newState =
-            ( State newState
-            , CurrentNotes
-                { old = (notes oldState)
-                , new = (notes newState)
-                }
-            )
+        ( newState, cmd ) =
+            updateInternal msg oldState
     in
-        toTuple <|
-            updateInternal msg (oldState)
+        ( State newState
+        , CurrentNotes
+            { old = (notes oldState)
+            , new = (notes newState)
+            }
+        , cmd
+        )
 
 
-updateInternal : Msg -> StateInternal -> StateInternal
+keyId : Note -> String
+keyId note =
+    "elm-piano-key-" ++ String.fromInt note
+
+
+getKeyCoordinates : (Int, Int) -> Task Never KeyCoordinates
+getKeyCoordinates (minNote, maxNote) =
+    List.range minNote maxNote
+    |> List.map
+        (\note ->
+            Browser.Dom.getElement (keyId note)
+            |> Task.map
+                (\res ->
+                    ( note, res.element )
+                )
+            |> Task.map Just
+            |> Task.onError (always (Task.succeed Nothing))
+        )
+    |> Task.sequence
+    |> Task.map (List.filterMap identity)
+
+
+noCmd : StateInternal -> (StateInternal, Cmd Msg)
+noCmd state =
+    ( state, Cmd.none )
+
+
+updateInternal : Msg -> StateInternal -> (StateInternal, Cmd Msg)
 updateInternal msg state =
     case msg of
         Enter note ->
-            case state.mouse of
+            ( case state.mouse of
                 NotClicked ->
                     state
 
@@ -478,9 +522,11 @@ updateInternal msg state =
 
                 ClickedKey oldNote ->
                     { state | mouse = ClickedKey note }
+            )
+            |> noCmd
 
         Leave leaveNote ->
-            case state.mouse of
+            ( case state.mouse of
                 NotClicked ->
                     state
 
@@ -498,23 +544,31 @@ updateInternal msg state =
                                     |> Debug.log "Piano: detected note leave with different pressed note"
                     in
                         { state | mouse = ClickedOutsideKeys }
+            )
+            |> noCmd
 
         Click note ->
-            case state.mouse of
+            ( case state.mouse of
                 NotClicked ->
                     { state | mouse = ClickedKey note }
 
                 _ ->
                     state
                         |> Debug.log "Piano: detected click event with the mouse already clicked. Check this"
+            )
+            |> noCmd
 
         MouseUp ->
-            { state | mouse = NotClicked }
+            ( { state | mouse = NotClicked }
+            , Cmd.none
+            )
 
         LeaveContainer ->
             -- MouseUp events that happen outside the container won't be
             -- registered, so it's better to force the status to be not clicked
-            { state | mouse = NotClicked }
+            ( { state | mouse = NotClicked }
+            , Cmd.none
+            )
 
         TouchStart note {touches} ->
             let
@@ -526,16 +580,68 @@ updateInternal msg state =
                         touches
                         |> Dict.fromList
             in
-            { state | touches = Dict.union newTouches state.touches }
+            ( { state | touches = Dict.union newTouches state.touches }
+            , Task.perform SetKeyCoordinates (getKeyCoordinates keyboard25Keys)
+            )
 
         TouchEnd {touches} ->
-            { state | touches =
+            ( { state | touches =
                 List.foldl
                     (.identifier >> Dict.remove)
                     state.touches
                     touches
-            }
+              }
+            , Cmd.none
+            )
 
+        TouchMove {touches} ->
+            let
+                newTouches =
+                    List.map (processTouchEvent state.keyCoordinates) touches
+                    |> List.filterMap identity
+                    |> List.foldl
+                        (\( identifier, note ) dict ->
+                            Dict.insert identifier note dict
+                        )
+                        state.touches
+            in
+                ( { state | touches = newTouches }
+                , Cmd.none
+                )
+
+        SetKeyCoordinates coords ->
+            ( { state | keyCoordinates = coords }
+            , Cmd.none
+            )
+
+
+processTouchEvent : KeyCoordinates -> Touch -> Maybe ( String, Note )
+processTouchEvent keyCoordinates touch =
+    let
+        (touchX, touchY) =
+            touch.coordinates
+
+        matchesCoordinates (_, {x, y, width, height}) =
+            touchX >= x &&
+            touchX <= x + width &&
+            touchY >= y &&
+            touchY <= y + height
+    in
+    find matchesCoordinates keyCoordinates
+    |> Maybe.map (\(note, _) -> ( touch.identifier, note ))
+
+
+find : (a -> Bool) -> List a -> Maybe a
+find predicate l =
+    case l of
+        [] ->
+            Nothing
+
+        x :: xs ->
+            if predicate x then
+                Just x
+            else
+                find predicate xs
 
 
 -- VIEW
@@ -709,6 +815,15 @@ viewKey mt note color active =
             preventDefaultOn
                 "mousedown"
                 (Json.Decode.succeed (msg, True))
+
+        keyInteractiveAttrs =
+            [ onMouseEnter (Enter note)
+            , onMouseLeave (Leave note)
+            , onMouseDown_ (Click note)
+            , Touch.onTouchStart (TouchStart note)
+            , Touch.onTouchEnd TouchEnd
+            , Touch.onTouchMove TouchMove
+            ]
     in
         if isNatural note then
             div
@@ -723,13 +838,9 @@ viewKey mt note color active =
                             |> backgroundColor
                         , zIndex (int 1)
                         ]
+                    , id (keyId note)
                     ]
-                    [ onMouseEnter (Enter note)
-                    , onMouseLeave (Leave note)
-                    , onMouseDown_ (Click note)
-                    , Touch.onTouchStart (TouchStart note)
-                    , Touch.onTouchEnd TouchEnd
-                    ]
+                    keyInteractiveAttrs
                 )
                 []
         else
@@ -753,13 +864,9 @@ viewKey mt note color active =
                                 |> backgroundColor
                             , keysBoderStyle
                             ]
+                        , id (keyId note)
                         ]
-                        [ onMouseEnter (Enter note)
-                        , onMouseLeave (Leave note)
-                        , onMouseDown_ (Click note)
-                        , Touch.onTouchStart (TouchStart note)
-                        , Touch.onTouchEnd TouchEnd
-                        ]
+                        keyInteractiveAttrs
                     )
                     []
                 ]

@@ -66,7 +66,7 @@ update msg model =
 
         PianoEvent pianoMsg ->
             let
-                ( pianoState, keys ) =
+                ( pianoState, keys, pianoCmd ) =
                     Piano.update pianoMsg model.pianoState
 
                 noteOnCmds : List (Cmd msg)
@@ -82,7 +82,9 @@ update msg model =
                         |> List.map noteOff
             in
                 ( { model | pianoState = pianoState }
-                , Cmd.batch (noteOnCmds ++ noteOffCmds)
+                , Cmd.batch
+                    (Cmd.map PianoEvent pianoCmd ::
+                        noteOnCmds ++ noteOffCmds)
                 )
 
         ChangePianoSize size ->

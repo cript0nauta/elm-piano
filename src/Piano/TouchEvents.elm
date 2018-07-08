@@ -28,7 +28,7 @@ type alias TouchEvent =
 
 type alias Touch =
     { identifier : String
-    , coordinates : ( Int, Int )
+    , coordinates : ( Float, Float )
     }
 
 
@@ -68,8 +68,8 @@ touchDecoder =
         (field "identifier" int |> map String.fromInt)
         (map2
             Tuple.pair
-            (field "pageX" int)
-            (field "pageY" int)
+            (field "pageX" float)
+            (field "pageY" float)
         )
 
 
