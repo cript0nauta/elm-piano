@@ -179,10 +179,20 @@ type State
     = State StateInternal
 
 
+-- Store the positions of each key, and in particular the middle C one
+-- (that is in all keyboard sizes) to recalculate all positions when
+-- the middle C location changed. This can happen when showing a different
+-- keyboard size or when the position relative to the global document changed
+type Coordinates
+    = NothingFetched
+    | FetchedMiddleC ( Float, Float )
+    | FetchedAll ( Float, Float ) KeyCoordinates
+
+
 type alias StateInternal =
     { touches : Dict String Note
     , mouse : MouseStatus
-    , keyCoordinates : KeyCoordinates
+    , keyCoordinates : Coordinates
     }
 
 type alias KeyCoordinates =
@@ -208,7 +218,7 @@ initialState : State
 initialState =
     State
         { touches = Dict.empty
-        , keyCoordinates = []
+        , keyCoordinates = NothingFetched
         , mouse = NotClicked }
 
 
@@ -386,6 +396,7 @@ type Msg
     | TouchEnd TouchEvent
     | TouchMove TouchEvent
     | SetKeyCoordinates KeyCoordinates
+    | SetMiddleCPosition ( Float, Float )
 
 
 {-| A data structure used for child-parent communication in the `update` function
@@ -504,6 +515,16 @@ getKeyCoordinates (minNote, maxNote) =
     |> Task.map (List.filterMap identity)
 
 
+getMiddleCPosition : Task Never ( Float, Float )
+getMiddleCPosition =
+    Browser.Dom.getElement (keyId 48)
+    |> Task.map
+        ( \res ->
+            ( res.element.x, res.element.y )
+        )
+    |> Task.onError (always (Task.succeed ( -1, -1 )))
+
+
 noCmd : StateInternal -> (StateInternal, Cmd Msg)
 noCmd state =
     ( state, Cmd.none )
@@ -581,7 +602,7 @@ updateInternal msg state =
                         |> Dict.fromList
             in
             ( { state | touches = Dict.union newTouches state.touches }
-            , Task.perform SetKeyCoordinates (getKeyCoordinates keyboard25Keys)
+            , Task.perform SetMiddleCPosition getMiddleCPosition
             )
 
         TouchEnd {touches} ->
@@ -595,24 +616,67 @@ updateInternal msg state =
             )
 
         TouchMove {touches} ->
-            let
-                newTouches =
-                    List.map (processTouchEvent state.keyCoordinates) touches
-                    |> List.filterMap identity
-                    |> List.foldl
-                        (\( identifier, note ) dict ->
-                            Dict.insert identifier note dict
+            case state.keyCoordinates of
+                FetchedAll _ coordinates ->
+                    let
+                        newTouches =
+                            List.map (processTouchEvent coordinates) touches
+                            |> List.filterMap identity
+                            |> List.foldl
+                                (\( identifier, note ) dict ->
+                                    Dict.insert identifier note dict
+                                )
+                                state.touches
+                    in
+                        ( { state | touches = newTouches }
+                        , Cmd.none
                         )
-                        state.touches
-            in
-                ( { state | touches = newTouches }
-                , Cmd.none
-                )
+                _ ->
+                    -- Ignore because we don't have the key coordinates that
+                    -- are needed to decide which key is being pressed
+                    ( state, Cmd.none )
 
         SetKeyCoordinates coords ->
-            ( { state | keyCoordinates = coords }
+            ( case state.keyCoordinates of
+                NothingFetched ->
+                    Debug.todo "This shouldn't happen!"
+
+                FetchedMiddleC middleC ->
+                    { state | keyCoordinates = FetchedAll middleC coords }
+
+                FetchedAll middleC _ ->
+                    { state | keyCoordinates = FetchedAll middleC coords }
             , Cmd.none
             )
+
+        SetMiddleCPosition coords ->
+            case state.keyCoordinates of
+                NothingFetched ->
+                    ( { state | keyCoordinates = FetchedMiddleC coords }
+                    , Task.perform
+                        SetKeyCoordinates
+                        (getKeyCoordinates keyboard88Keys)
+                    )
+
+                FetchedMiddleC oldCoords ->
+                    if oldCoords == coords then
+                        ( state, Cmd.none )
+                    else
+                        ( { state | keyCoordinates = FetchedMiddleC coords }
+                        , Task.perform
+                            SetKeyCoordinates
+                            (getKeyCoordinates keyboard88Keys)
+                        )
+
+                FetchedAll oldCoords keyCoordinates ->
+                    if oldCoords == coords then
+                        ( state, Cmd.none )
+                    else
+                        ( { state | keyCoordinates = FetchedMiddleC coords }
+                        , Task.perform
+                            SetKeyCoordinates
+                            (getKeyCoordinates keyboard88Keys)
+                        )
 
 
 processTouchEvent : KeyCoordinates -> Touch -> Maybe ( String, Note )
