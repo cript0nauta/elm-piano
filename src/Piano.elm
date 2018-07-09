@@ -178,15 +178,13 @@ makeConfig noteRange =
 type State
     = State StateInternal
 
-
--- Store the positions of each key, and in particular the middle C one
--- (that is in all keyboard sizes) to recalculate all positions when
--- the middle C location changed. This can happen when showing a different
--- keyboard size or when the position relative to the global document changed
+-- Store the positions of each key. The first and last keys positions are
+-- duplicated in a type-safe manner and used to decide when to refresh
+-- all the keys because something changed in the document
 type Coordinates
     = NothingFetched
-    | FetchedMiddleC ( Float, Float )
-    | FetchedAll ( Float, Float ) KeyCoordinates
+    | FetchedBounds ( (Float, Float), (Float, Float) )
+    | FetchedAll ( (Float, Float), (Float, Float) ) KeyCoordinates
 
 
 type alias StateInternal =
@@ -396,7 +394,7 @@ type Msg
     | TouchEnd TouchEvent
     | TouchMove TouchEvent
     | SetKeyCoordinates KeyCoordinates
-    | SetMiddleCPosition ( Float, Float )
+    | SetBoundsPosition ( (Float, Float), (Float, Float) )
 
 
 {-| A data structure used for child-parent communication in the `update` function
@@ -515,14 +513,21 @@ getKeyCoordinates (minNote, maxNote) =
     |> Task.map (List.filterMap identity)
 
 
-getMiddleCPosition : Task Never ( Float, Float )
-getMiddleCPosition =
-    Browser.Dom.getElement (keyId 48)
-    |> Task.map
-        ( \res ->
-            ( res.element.x, res.element.y )
-        )
-    |> Task.onError (always (Task.succeed ( -1, -1 )))
+getBoundsPosition : Task Never ( (Float, Float), (Float, Float) )
+getBoundsPosition =
+    let
+        getPositionOf elementId =
+            Browser.Dom.getElement elementId
+            |> Task.map
+                ( \res ->
+                    ( res.element.x, res.element.y )
+                )
+            |> Task.onError (always (Task.succeed ( -1, -1 )))
+    in
+        Task.map2
+            Tuple.pair
+            (getPositionOf "elm-piano-first-key")
+            (getPositionOf "elm-piano-last-key")
 
 
 noCmd : StateInternal -> (StateInternal, Cmd Msg)
@@ -602,7 +607,7 @@ updateInternal msg state =
                         |> Dict.fromList
             in
             ( { state | touches = Dict.union newTouches state.touches }
-            , Task.perform SetMiddleCPosition getMiddleCPosition
+            , Task.perform SetBoundsPosition getBoundsPosition
             )
 
         TouchEnd {touches} ->
@@ -641,38 +646,38 @@ updateInternal msg state =
                 NothingFetched ->
                     Debug.todo "This shouldn't happen!"
 
-                FetchedMiddleC middleC ->
-                    { state | keyCoordinates = FetchedAll middleC coords }
+                FetchedBounds bounds ->
+                    { state | keyCoordinates = FetchedAll bounds coords }
 
-                FetchedAll middleC _ ->
-                    { state | keyCoordinates = FetchedAll middleC coords }
+                FetchedAll bounds _ ->
+                    { state | keyCoordinates = FetchedAll bounds coords }
             , Cmd.none
             )
 
-        SetMiddleCPosition coords ->
+        SetBoundsPosition coords ->
             case state.keyCoordinates of
                 NothingFetched ->
-                    ( { state | keyCoordinates = FetchedMiddleC coords }
+                    ( { state | keyCoordinates = FetchedBounds coords }
                     , Task.perform
                         SetKeyCoordinates
                         (getKeyCoordinates keyboard88Keys)
                     )
 
-                FetchedMiddleC oldCoords ->
+                FetchedBounds oldCoords ->
                     if oldCoords == coords then
                         ( state, Cmd.none )
                     else
-                        ( { state | keyCoordinates = FetchedMiddleC coords }
+                        ( { state | keyCoordinates = FetchedBounds coords }
                         , Task.perform
                             SetKeyCoordinates
                             (getKeyCoordinates keyboard88Keys)
                         )
 
-                FetchedAll oldCoords keyCoordinates ->
+                FetchedAll oldCoords _ ->
                     if oldCoords == coords then
                         ( state, Cmd.none )
                     else
-                        ( { state | keyCoordinates = FetchedMiddleC coords }
+                        ( { state | keyCoordinates = FetchedBounds coords }
                         , Task.perform
                             SetKeyCoordinates
                             (getKeyCoordinates keyboard88Keys)
@@ -822,14 +827,23 @@ view mt config (State state) =
                                  else
                                     config.unpressedKeyColors
                                 )
+
+                            keyOrder =
+                                if note == Tuple.first config.noteRange then
+                                    First
+                                else if note == Tuple.second config.noteRange then
+                                    Last
+                                else
+                                    Middle
                         in
                             viewKey
                                 mt
                                 note
-                                (Dict.get note colorDict
-                                    |> Maybe.map nativeColorToCss
-                                )
-                                active
+                                { active = active
+                                , color = (Dict.get note colorDict
+                                    |> Maybe.map nativeColorToCss)
+                                , order = keyOrder
+                                }
                     )
                     range
              ]
@@ -837,10 +851,23 @@ view mt config (State state) =
             |> toUnstyled
 
 
+type KeyOrder
+    = First
+    | Middle
+    | Last
+
+
+type alias KeyProperties =
+    { active : Bool
+    , color : Maybe Color
+    , order : KeyOrder
+    }
+
+
 {-| Helper function to render a single note
 -}
-viewKey : MessageType msg -> Note -> Maybe Color -> Bool -> Html msg
-viewKey mt note color active =
+viewKey : MessageType msg -> Note -> KeyProperties -> Html msg
+viewKey mt note { order, color, active } =
     let
         blackWhiteStyle : Style
         blackWhiteStyle =
@@ -888,6 +915,24 @@ viewKey mt note color active =
             , Touch.onTouchEnd TouchEnd
             , Touch.onTouchMove TouchMove
             ]
+
+        -- used to fetch the positions of the first and last keys
+        keyInner =
+            case order of
+                First ->
+                    [ span
+                        [ id "elm-piano-first-key" ]
+                        []
+                    ]
+
+                Last ->
+                    [ span
+                        [ id "elm-piano-last-key" ]
+                        []
+                    ]
+
+                Middle ->
+                    []
     in
         if isNatural note then
             div
@@ -906,7 +951,7 @@ viewKey mt note color active =
                     ]
                     keyInteractiveAttrs
                 )
-                []
+                keyInner
         else
             div
                 [ css
@@ -932,7 +977,7 @@ viewKey mt note color active =
                         ]
                         keyInteractiveAttrs
                     )
-                    []
+                    keyInner
                 ]
 
 
