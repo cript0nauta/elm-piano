@@ -35,6 +35,8 @@ main =
         pianoConfig : Piano.Config
         pianoConfig =
             Piano.makeConfig Piano.keyboard88Keys
-                |> Piano.colorAllPressedKeys Color.lightOrange Color.darkOrange
+                |> Piano.colorAllPressedKeys
+                    (Color.toRgb Color.lightOrange)
+                    (Color.toRgb Color.darkOrange)
     in
     Piano.viewStatic pianoConfig notes
