@@ -1,12 +1,12 @@
 module Piano exposing
     ( viewStatic
-    , viewInteractive
-    , State
-    , initialState
     , Note
-    , getNotes
+    , viewInteractive
     , Config
     , makeConfig
+    , State
+    , initialState
+    , getNotes
     , Msg
     , update
     , CurrentNotes
@@ -36,21 +36,21 @@ module Piano exposing
 # View
 
 @docs viewStatic
-@docs viewInteractive
-
-
-# State
-
-@docs State
-@docs initialState
 @docs Note
-@docs getNotes
+@docs viewInteractive
 
 
 # Configuration
 
 @docs Config
 @docs makeConfig
+
+
+# State
+
+@docs State
+@docs initialState
+@docs getNotes
 
 
 # Interactive mode functions and types
@@ -108,18 +108,11 @@ import String
 import Task exposing (Task)
 
 
-
--- main =
---     App.beginnerProgram
---         { model = initialModel
---         , update = update
---         , view = view
---         }
-
-
 {-| Represents a note giving its MIDI Note Number
 
-See [[[[http://www.electronics.dit.ie/staff/tscarff/Music\_technology/midi/midi\_note\_numbers\_for\_octaves.htm](http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note_numbers_for_octaves.htm)](http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note_numbers_for_octaves.htm)](http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note_numbers_for_octaves.htm)](http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note_numbers_for_octaves.htm) for more information
+See
+[this](http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note_numbers_for_octaves.htm)
+for more information
 
 -}
 type alias Note =
@@ -180,22 +173,15 @@ makeConfig noteRange =
             Dict.empty
 
 
-{-| The view's internal state. You should keep this on your model
+{-| The view's internal state.
+
+This is necessary when using viewInteractive. viewStatic doesn't use this.
+
+You should keep this on your model
+
 -}
 type State
     = State StateInternal
-
-
-
--- Store the positions of each key. The first and last keys positions are
--- duplicated in a type-safe manner and used to decide when to refresh
--- all the keys because something changed in the document
-
-
-type Coordinates
-    = NothingFetched
-    | FetchedBounds ( ( Float, Float ), ( Float, Float ) )
-    | FetchedAll ( ( Float, Float ), ( Float, Float ) ) KeyCoordinates
 
 
 type alias StateInternal =
@@ -203,6 +189,22 @@ type alias StateInternal =
     , mouse : MouseStatus
     , keyCoordinates : Coordinates
     }
+
+
+type MouseStatus
+    = NotClicked
+    | ClickedOutsideKeys
+    | ClickedKey Note
+
+
+{-| Store the positions of each key. The first and last keys positions are
+duplicated in a type-safe manner and used to decide when to refresh
+all the keys because something changed in the document.
+-}
+type Coordinates
+    = NothingFetched
+    | FetchedBounds ( ( Float, Float ), ( Float, Float ) )
+    | FetchedAll ( ( Float, Float ), ( Float, Float ) ) KeyCoordinates
 
 
 type alias KeyCoordinates =
@@ -214,12 +216,6 @@ type alias KeyCoordinates =
           , height : Float
           }
         )
-
-
-type MouseStatus
-    = NotClicked
-    | ClickedOutsideKeys
-    | ClickedKey Note
 
 
 {-| Contructor for the State type
@@ -272,13 +268,11 @@ colorKeys white black =
     allNotes
         |> List.map
             (\n ->
-                ( n
-                , if isNatural n then
-                    white
+                if isNatural n then
+                    ( n, white )
 
-                  else
-                    black
-                )
+                else
+                    ( n, black )
             )
         |> Dict.fromList
 
@@ -410,7 +404,7 @@ activeNotes (CurrentNotes { new }) =
 {-| Return a set of the notes that were pressed in the last event and
 were unpressed before
 
-    ( pianoState, currentNotes ) =
+    ( pianoState, currentNotes, pianoCmd ) =
         Piano.update pianoMsg model.pianoState
 
     noteOnCmds : List (Cmd msg)
@@ -445,24 +439,25 @@ releasedNotes (CurrentNotes { old, new }) =
 
 {-| Use this function to update the piano State.
 
-The second tuple member is intented for you to use it to do some actions
-in your code, like sending messages to a port producing sound
-(see the interactive example).
+The returned tuple's second member is intented for you to use it to do some
+actions when the user clicks or releases a key, like sending messages to a port
+producing sound (see the interactive example).
 
     type Msg =
         PianoEvent Piano.Msg
         | OtherEvent
 
-    update : Msg -> Model -> Model
+    update : Msg -> Model -> ( Model, Cmd Msg )
     update msg model =
         case msg of
             PianoEvent pianoMsg =
                 let
-                    -- I don't need to use the CurrentNotes right now
-                    (newPianoState, _) =
+                    (pianoState, currentNotes, pianoCmd) =
                         Piano.update pianoMsg model.piano
                 in
-                    { model | piano = newPianoState }
+                    ( { model | piano = pianoState }
+                    , Cmd.map PianoEvent pianoConfig
+                    )
 
 -}
 update : Msg -> State -> ( State, CurrentNotes, Cmd Msg )
@@ -493,26 +488,26 @@ getKeyCoordinates ( minNote, maxNote ) =
                 Browser.Dom.getElement (keyId note)
                     |> Task.map
                         (\res ->
-                            ( note, res.element )
+                            Just ( note, res.element )
                         )
-                    |> Task.map Just
                     |> Task.onError (always (Task.succeed Nothing))
             )
         |> Task.sequence
         |> Task.map (List.filterMap identity)
 
 
+getPositionOf : String -> Task Never ( Float, Float )
+getPositionOf elementId =
+    Browser.Dom.getElement elementId
+        |> Task.map
+            (\res ->
+                ( res.element.x, res.element.y )
+            )
+        |> Task.onError (always (Task.succeed ( -1, -1 )))
+
+
 getBoundsPosition : Task Never ( ( Float, Float ), ( Float, Float ) )
 getBoundsPosition =
-    let
-        getPositionOf elementId =
-            Browser.Dom.getElement elementId
-                |> Task.map
-                    (\res ->
-                        ( res.element.x, res.element.y )
-                    )
-                |> Task.onError (always (Task.succeed ( -1, -1 )))
-    in
     Task.map2
         Tuple.pair
         (getPositionOf "elm-piano-first-key")
@@ -671,24 +666,19 @@ updateInternal msg state =
 
 processTouchEvent : KeyCoordinates -> Touch -> Maybe ( String, Note )
 processTouchEvent keyCoordinates touch =
+    find (matchesCoordinates touch) keyCoordinates
+        |> Maybe.map (\( note, _ ) -> ( touch.identifier, note ))
+
+
+matchesCoordinates touch ( _, { x, y, width, height } ) =
     let
         ( touchX, touchY ) =
             touch.coordinates
-
-        matchesCoordinates ( _, { x, y, width, height } ) =
-            touchX
-                >= x
-                && touchX
-                <= x
-                + width
-                && touchY
-                >= y
-                && touchY
-                <= y
-                + height
     in
-    find matchesCoordinates keyCoordinates
-        |> Maybe.map (\( note, _ ) -> ( touch.identifier, note ))
+    (touchX >= x)
+        && (touchX <= x + width)
+        && (touchY >= y)
+        && (touchY <= y + height)
 
 
 find : (a -> Bool) -> List a -> Maybe a
@@ -709,6 +699,9 @@ find predicate l =
 -- VIEW
 
 
+{-| A nice hack to be able to make view functions that can produce both Html
+Never and Html Msg, based on which MessageType is given
+-}
 type MessageType msg
     = NoMessages
     | WithMessages (Msg -> msg)
@@ -754,8 +747,8 @@ viewInteractive (Config config) (State state) =
     view withMessages config (notes state)
 
 
-{-| Render a non-interactive piano. Use this when you wan't to show
-something instead of wanting the user to click on the keys
+{-| Render a non-interactive piano. Pass it a config and the set
+of notes you desire to be pressed, and it will return an Html
 -}
 viewStatic : Config -> Set Note -> Html.Html Never
 viewStatic (Config config) desiredNotes =
