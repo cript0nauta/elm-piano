@@ -756,18 +756,18 @@ do this read
 
 -}
 viewInteractive : Config -> State -> Html.Html Msg
-viewInteractive (Config config) state =
-    view withMessages config state
+viewInteractive (Config config) (State state) =
+    view withMessages config (notes state)
 
 viewStatic : Config -> Set Note -> Html.Html Never
 viewStatic (Config config) desiredNotes =
     view
         NoMessages
         config
-        (setNotes desiredNotes initialState)
+        desiredNotes
 
-view : MessageType msg -> ConfigInternal -> State -> Html.Html msg
-view mt config (State state) =
+view : MessageType msg -> ConfigInternal -> Set Note -> Html.Html msg
+view mt config pressedNotes =
     let
         container inner =
             div
@@ -819,7 +819,7 @@ view mt config (State state) =
                     (\note ->
                         let
                             active =
-                                (Set.member note (notes state))
+                                (Set.member note pressedNotes)
 
                             colorDict =
                                 (if active then
