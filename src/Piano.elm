@@ -4,8 +4,6 @@ module Piano exposing
     , initialState
     , Note
     , getNotes
-    , setNotes
-    , updateNotes
     , Config
     , Msg
     , update
@@ -248,19 +246,6 @@ notes state =
             ++ Dict.values state.touches
 
 
-{-| Set the currently pressed notes of the piano
-
-    newPianoState =
-        -- The only pressed key will be the middle C
-        Piano.initialState
-            |> Piano.setNotes (Set.singleton 48)
-
--}
-setNotes : Set Note -> State -> State
-setNotes desiredNotes (State state) =
-    Debug.todo "not implemented"
-
-
 {-| Returns the currently pressed notes of a State
 
     showPressedNotes : Piano.State -> Html msg
@@ -277,20 +262,6 @@ setNotes desiredNotes (State state) =
 getNotes : State -> Set Note
 getNotes (State state) =
     notes state
-
-
-{-| Changes the currently pressed notes of a State
-
-    newPianoState =
-        -- If the middle C was pressed, unpress it
-        -- the remaining keys won't change their pressed status
-        oldPianoState
-            |> Piano.updateNotes (Set.remove 48)
-
--}
-updateNotes : (Set Note -> Set Note) -> State -> State
-updateNotes f (State state) =
-    Debug.todo "not implemented"
 
 
 colorKeys : KeyColor -> KeyColor -> Dict Note KeyColor
@@ -572,19 +543,10 @@ updateInternal msg state =
                     state
 
                 ClickedOutsideKeys ->
+                    -- Invalid state, ignore
                     state
-                        |> Debug.log "Piano: detected note leave with mouse outside piano keys"
 
                 ClickedKey clickNote ->
-                    let
-                        debug =
-                            if clickNote == leaveNote then
-                                state
-
-                            else
-                                state
-                                    |> Debug.log "Piano: detected note leave with different pressed note"
-                    in
                     { state | mouse = ClickedOutsideKeys }
             )
                 |> noCmd
@@ -595,8 +557,8 @@ updateInternal msg state =
                     { state | mouse = ClickedKey note }
 
                 _ ->
+                    -- Invalid state, ignore
                     state
-                        |> Debug.log "Piano: detected click event with the mouse already clicked. Check this"
             )
                 |> noCmd
 
@@ -662,7 +624,7 @@ updateInternal msg state =
         SetKeyCoordinates coords ->
             ( case state.keyCoordinates of
                 NothingFetched ->
-                    Debug.todo "This shouldn't happen!"
+                    state
 
                 FetchedBounds bounds ->
                     { state | keyCoordinates = FetchedAll bounds coords }
