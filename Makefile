@@ -21,5 +21,5 @@ documentation.json: src/Piano.elm
 	elm make --docs=documentation.json --output=/dev/null src/Piano.elm
 
 clean:
-	cd examples && rm -rf $(ALL) elm-stuff/
-	rm -rf documentation.json
+	rm -rf documentation.json elm-stuff/
+	rm -rf $(ALL) examples/elm-stuff/
