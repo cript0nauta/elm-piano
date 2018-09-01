@@ -1,10 +1,10 @@
-module Utils exposing (..)
+module Utils exposing (debugNotes, sizeSelector)
 
-import Set
 import Html exposing (..)
 import Html.Attributes exposing (style)
 import Html.Events exposing (onClick)
 import Piano exposing (..)
+import Set
 
 
 sizeSelector : (( Note, Note ) -> msg) -> Html msg
@@ -15,19 +15,19 @@ sizeSelector msg =
                 keys =
                     Tuple.second size - Tuple.first size + 1
             in
-                button [ onClick (msg size) ]
-                    [ text (String.fromInt keys ++ "-key piano") ]
+            button [ onClick (msg size) ]
+                [ text (String.fromInt keys ++ "-key piano") ]
     in
-        List.map keyboardSizeOption
-            [ keyboard12Keys
-            , keyboard25Keys
-            , keyboard49Keys
-            , keyboard61Keys
-            , keyboard76Keys
-            , keyboard88Keys
-            ]
-            |> List.intersperse (br [] [])
-            |> div []
+    List.map keyboardSizeOption
+        [ keyboard12Keys
+        , keyboard25Keys
+        , keyboard49Keys
+        , keyboard61Keys
+        , keyboard76Keys
+        , keyboard88Keys
+        ]
+        |> List.intersperse (br [] [])
+        |> div []
 
 
 debugNotes : State -> Html msg

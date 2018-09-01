@@ -1,37 +1,34 @@
-module Piano
-    exposing
-        ( Msg
-        , Note
-        , Config
-        , makeConfig
-        , State
-        , CurrentNotes
-        , KeyColor
-        , activeNotes
-        , newNotes
-        , releasedNotes
-        , initialState
-        , setNotes
-        , getNotes
-        , updateNotes
-        , update
-        , viewStatic
-        , viewInteractive
-        , colorAllPressedKeys
-        , colorAllUnpressedKeys
-        , colorPressedKeys
-        , colorUnpressedKeys
-        , isNatural
-        , noteName
-        , octave
-        , allNotes
-        , keyboard12Keys
-        , keyboard25Keys
-        , keyboard49Keys
-        , keyboard61Keys
-        , keyboard76Keys
-        , keyboard88Keys
-        )
+module Piano exposing
+    ( view
+    , State
+    , initialState
+    , Note
+    , getNotes
+    , setNotes
+    , updateNotes
+    , Config
+    , Msg
+    , update
+    , CurrentNotes
+    , activeNotes
+    , newNotes
+    , releasedNotes
+    , colorAllUnpressedKeys
+    , colorAllPressedKeys
+    , colorUnpressedKeys
+    , colorPressedKeys
+    , noteName
+    , isNatural
+    , octave
+    , allNotes
+    , keyboard12Keys
+    , keyboard25Keys
+    , keyboard49Keys
+    , keyboard61Keys
+    , keyboard76Keys
+    , keyboard88Keys
+    , KeyColor, makeConfig, viewInteractive, viewStatic
+    )
 
 {-| A reusable piano view
 
@@ -101,15 +98,16 @@ the user to select the notes by clicking on the piano keys.
 import Browser.Dom
 import Css exposing (..)
 import Dict exposing (Dict)
-import Json.Decode
 import Html
 import Html.Styled exposing (..)
 import Html.Styled.Attributes exposing (..)
 import Html.Styled.Events exposing (..)
+import Json.Decode
+import Piano.TouchEvents as Touch exposing (Touch, TouchEvent)
 import Set exposing (Set)
 import String
 import Task exposing (Task)
-import Piano.TouchEvents as Touch exposing (Touch, TouchEvent)
+
 
 
 -- main =
@@ -122,7 +120,7 @@ import Piano.TouchEvents as Touch exposing (Touch, TouchEvent)
 
 {-| Represents a note giving its MIDI Note Number
 
-See <http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note_numbers_for_octaves.htm> for more information
+See [http://www.electronics.dit.ie/staff/tscarff/Music\_technology/midi/midi\_note\_numbers\_for\_octaves.htm](http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note_numbers_for_octaves.htm) for more information
 
 -}
 type alias Note =
@@ -138,7 +136,7 @@ allNotes =
 
 {-| Configuration for the view.
 
-**Note:** This should *never* be held in your model, since it is related
+**Note:** This should _never_ be held in your model, since it is related
 to the `view` code.
 
 -}
@@ -186,13 +184,17 @@ makeConfig noteRange =
 type State
     = State StateInternal
 
+
+
 -- Store the positions of each key. The first and last keys positions are
 -- duplicated in a type-safe manner and used to decide when to refresh
 -- all the keys because something changed in the document
+
+
 type Coordinates
     = NothingFetched
-    | FetchedBounds ( (Float, Float), (Float, Float) )
-    | FetchedAll ( (Float, Float), (Float, Float) ) KeyCoordinates
+    | FetchedBounds ( ( Float, Float ), ( Float, Float ) )
+    | FetchedAll ( ( Float, Float ), ( Float, Float ) ) KeyCoordinates
 
 
 type alias StateInternal =
@@ -200,6 +202,7 @@ type alias StateInternal =
     , mouse : MouseStatus
     , keyCoordinates : Coordinates
     }
+
 
 type alias KeyCoordinates =
     List
@@ -225,7 +228,8 @@ initialState =
     State
         { touches = Dict.empty
         , keyCoordinates = NothingFetched
-        , mouse = NotClicked }
+        , mouse = NotClicked
+        }
 
 
 notes : StateInternal -> Set Note
@@ -235,11 +239,13 @@ notes state =
             case state.mouse of
                 ClickedKey note ->
                     [ note ]
+
                 _ ->
                     []
     in
     Set.fromList <|
-        mouseNotes ++ Dict.values state.touches
+        mouseNotes
+            ++ Dict.values state.touches
 
 
 {-| Set the currently pressed notes of the piano
@@ -295,6 +301,7 @@ colorKeys white black =
                 ( n
                 , if isNatural n then
                     white
+
                   else
                     black
                 )
@@ -402,7 +409,7 @@ type Msg
     | TouchEnd TouchEvent
     | TouchMove TouchEvent
     | SetKeyCoordinates KeyCoordinates
-    | SetBoundsPosition ( (Float, Float), (Float, Float) )
+    | SetBoundsPosition ( ( Float, Float ), ( Float, Float ) )
 
 
 {-| A data structure used for child-parent communication in the `update` function
@@ -490,13 +497,13 @@ update msg (State oldState) =
         ( newState, cmd ) =
             updateInternal msg oldState
     in
-        ( State newState
-        , CurrentNotes
-            { old = (notes oldState)
-            , new = (notes newState)
-            }
-        , cmd
-        )
+    ( State newState
+    , CurrentNotes
+        { old = notes oldState
+        , new = notes newState
+        }
+    , cmd
+    )
 
 
 keyId : Note -> String
@@ -504,50 +511,50 @@ keyId note =
     "elm-piano-key-" ++ String.fromInt note
 
 
-getKeyCoordinates : (Int, Int) -> Task Never KeyCoordinates
-getKeyCoordinates (minNote, maxNote) =
+getKeyCoordinates : ( Int, Int ) -> Task Never KeyCoordinates
+getKeyCoordinates ( minNote, maxNote ) =
     List.range minNote maxNote
-    |> List.map
-        (\note ->
-            Browser.Dom.getElement (keyId note)
-            |> Task.map
-                (\res ->
-                    ( note, res.element )
-                )
-            |> Task.map Just
-            |> Task.onError (always (Task.succeed Nothing))
-        )
-    |> Task.sequence
-    |> Task.map (List.filterMap identity)
+        |> List.map
+            (\note ->
+                Browser.Dom.getElement (keyId note)
+                    |> Task.map
+                        (\res ->
+                            ( note, res.element )
+                        )
+                    |> Task.map Just
+                    |> Task.onError (always (Task.succeed Nothing))
+            )
+        |> Task.sequence
+        |> Task.map (List.filterMap identity)
 
 
-getBoundsPosition : Task Never ( (Float, Float), (Float, Float) )
+getBoundsPosition : Task Never ( ( Float, Float ), ( Float, Float ) )
 getBoundsPosition =
     let
         getPositionOf elementId =
             Browser.Dom.getElement elementId
-            |> Task.map
-                ( \res ->
-                    ( res.element.x, res.element.y )
-                )
-            |> Task.onError (always (Task.succeed ( -1, -1 )))
+                |> Task.map
+                    (\res ->
+                        ( res.element.x, res.element.y )
+                    )
+                |> Task.onError (always (Task.succeed ( -1, -1 )))
     in
-        Task.map2
-            Tuple.pair
-            (getPositionOf "elm-piano-first-key")
-            (getPositionOf "elm-piano-last-key")
+    Task.map2
+        Tuple.pair
+        (getPositionOf "elm-piano-first-key")
+        (getPositionOf "elm-piano-last-key")
 
 
-noCmd : StateInternal -> (StateInternal, Cmd Msg)
+noCmd : StateInternal -> ( StateInternal, Cmd Msg )
 noCmd state =
     ( state, Cmd.none )
 
 
-updateInternal : Msg -> StateInternal -> (StateInternal, Cmd Msg)
+updateInternal : Msg -> StateInternal -> ( StateInternal, Cmd Msg )
 updateInternal msg state =
     case msg of
         Enter note ->
-            ( case state.mouse of
+            (case state.mouse of
                 NotClicked ->
                     state
 
@@ -557,10 +564,10 @@ updateInternal msg state =
                 ClickedKey oldNote ->
                     { state | mouse = ClickedKey note }
             )
-            |> noCmd
+                |> noCmd
 
         Leave leaveNote ->
-            ( case state.mouse of
+            (case state.mouse of
                 NotClicked ->
                     state
 
@@ -573,16 +580,17 @@ updateInternal msg state =
                         debug =
                             if clickNote == leaveNote then
                                 state
+
                             else
                                 state
                                     |> Debug.log "Piano: detected note leave with different pressed note"
                     in
-                        { state | mouse = ClickedOutsideKeys }
+                    { state | mouse = ClickedOutsideKeys }
             )
-            |> noCmd
+                |> noCmd
 
         Click note ->
-            ( case state.mouse of
+            (case state.mouse of
                 NotClicked ->
                     { state | mouse = ClickedKey note }
 
@@ -590,7 +598,7 @@ updateInternal msg state =
                     state
                         |> Debug.log "Piano: detected click event with the mouse already clicked. Check this"
             )
-            |> noCmd
+                |> noCmd
 
         MouseUp ->
             ( { state | mouse = NotClicked }
@@ -604,7 +612,7 @@ updateInternal msg state =
             , Cmd.none
             )
 
-        TouchStart note {touches} ->
+        TouchStart note { touches } ->
             let
                 newTouches =
                     List.map
@@ -618,32 +626,34 @@ updateInternal msg state =
             , Task.perform SetBoundsPosition getBoundsPosition
             )
 
-        TouchEnd {touches} ->
-            ( { state | touches =
-                List.foldl
-                    (.identifier >> Dict.remove)
-                    state.touches
-                    touches
+        TouchEnd { touches } ->
+            ( { state
+                | touches =
+                    List.foldl
+                        (.identifier >> Dict.remove)
+                        state.touches
+                        touches
               }
             , Cmd.none
             )
 
-        TouchMove {touches} ->
+        TouchMove { touches } ->
             case state.keyCoordinates of
                 FetchedAll _ coordinates ->
                     let
                         newTouches =
                             List.map (processTouchEvent coordinates) touches
-                            |> List.filterMap identity
-                            |> List.foldl
-                                (\( identifier, note ) dict ->
-                                    Dict.insert identifier note dict
-                                )
-                                state.touches
+                                |> List.filterMap identity
+                                |> List.foldl
+                                    (\( identifier, note ) dict ->
+                                        Dict.insert identifier note dict
+                                    )
+                                    state.touches
                     in
-                        ( { state | touches = newTouches }
-                        , Cmd.none
-                        )
+                    ( { state | touches = newTouches }
+                    , Cmd.none
+                    )
+
                 _ ->
                     -- Ignore because we don't have the key coordinates that
                     -- are needed to decide which key is being pressed
@@ -674,6 +684,7 @@ updateInternal msg state =
                 FetchedBounds oldCoords ->
                     if oldCoords == coords then
                         ( state, Cmd.none )
+
                     else
                         ( { state | keyCoordinates = FetchedBounds coords }
                         , Task.perform
@@ -684,6 +695,7 @@ updateInternal msg state =
                 FetchedAll oldCoords _ ->
                     if oldCoords == coords then
                         ( state, Cmd.none )
+
                     else
                         ( { state | keyCoordinates = FetchedBounds coords }
                         , Task.perform
@@ -695,17 +707,23 @@ updateInternal msg state =
 processTouchEvent : KeyCoordinates -> Touch -> Maybe ( String, Note )
 processTouchEvent keyCoordinates touch =
     let
-        (touchX, touchY) =
+        ( touchX, touchY ) =
             touch.coordinates
 
-        matchesCoordinates (_, {x, y, width, height}) =
-            touchX >= x &&
-            touchX <= x + width &&
-            touchY >= y &&
-            touchY <= y + height
+        matchesCoordinates ( _, { x, y, width, height } ) =
+            touchX
+                >= x
+                && touchX
+                <= x
+                + width
+                && touchY
+                >= y
+                && touchY
+                <= y
+                + height
     in
     find matchesCoordinates keyCoordinates
-    |> Maybe.map (\(note, _) -> ( touch.identifier, note ))
+        |> Maybe.map (\( note, _ ) -> ( touch.identifier, note ))
 
 
 find : (a -> Bool) -> List a -> Maybe a
@@ -717,8 +735,10 @@ find predicate l =
         x :: xs ->
             if predicate x then
                 Just x
+
             else
                 find predicate xs
+
 
 
 -- VIEW
@@ -742,16 +762,17 @@ attrs mt static stateful =
                 (Html.Styled.Attributes.map never)
                 static
     in
-        case mt of
-            NoMessages ->
-                mappedStatic
+    case mt of
+        NoMessages ->
+            mappedStatic
 
-            WithMessages f ->
-                List.append
-                    mappedStatic
-                    (List.map
-                        (Html.Styled.Attributes.map f)
-                        stateful)
+        WithMessages f ->
+            List.append
+                mappedStatic
+                (List.map
+                    (Html.Styled.Attributes.map f)
+                    stateful
+                )
 
 
 {-| Show an interactive piano given its configuration and its state.
@@ -767,12 +788,14 @@ viewInteractive : Config -> State -> Html.Html Msg
 viewInteractive (Config config) (State state) =
     view withMessages config (notes state)
 
+
 viewStatic : Config -> Set Note -> Html.Html Never
 viewStatic (Config config) desiredNotes =
     view
         NoMessages
         config
         desiredNotes
+
 
 view : MessageType msg -> ConfigInternal -> Set Note -> Html.Html msg
 view mt config pressedNotes =
@@ -812,41 +835,42 @@ view mt config pressedNotes =
         range =
             List.range (Tuple.first config.noteRange) (Tuple.second config.noteRange)
     in
-        span [ style "text-align" "center" ]
-            ([ container <|
-                List.map
-                    (\note ->
-                        let
-                            active =
-                                (Set.member note pressedNotes)
+    span [ style "text-align" "center" ]
+        [ container <|
+            List.map
+                (\note ->
+                    let
+                        active =
+                            Set.member note pressedNotes
 
-                            colorDict =
-                                (if active then
-                                    config.pressedKeyColors
-                                 else
-                                    config.unpressedKeyColors
-                                )
+                        colorDict =
+                            if active then
+                                config.pressedKeyColors
 
-                            keyOrder =
-                                if note == Tuple.first config.noteRange then
-                                    First
-                                else if note == Tuple.second config.noteRange then
-                                    Last
-                                else
-                                    Middle
-                        in
-                            viewKey
-                                mt
-                                note
-                                { active = active
-                                , color = Dict.get note colorDict
-                                , order = keyOrder
-                                }
-                    )
-                    range
-             ]
-            )
-            |> toUnstyled
+                            else
+                                config.unpressedKeyColors
+
+                        keyOrder =
+                            if note == Tuple.first config.noteRange then
+                                First
+
+                            else if note == Tuple.second config.noteRange then
+                                Last
+
+                            else
+                                Middle
+                    in
+                    viewKey
+                        mt
+                        note
+                        { active = active
+                        , color = Dict.get note colorDict
+                        , order = keyOrder
+                        }
+                )
+                range
+        ]
+        |> toUnstyled
 
 
 type KeyOrder
@@ -892,10 +916,13 @@ viewKey mt note { order, color, active } =
             if isNatural note then
                 if active then
                     hex "#88FFAA"
+
                 else
                     hex "#FFFFFF"
+
             else if active then
                 hex "#55AA55"
+
             else
                 hex "#000000"
 
@@ -903,7 +930,7 @@ viewKey mt note { order, color, active } =
             -- Use preventDefault to prevent native drag & drop feature
             preventDefaultOn
                 "mousedown"
-                (Json.Decode.succeed (msg, True))
+                (Json.Decode.succeed ( msg, True ))
 
         keyInteractiveAttrs =
             [ onMouseEnter (Enter note)
@@ -932,54 +959,60 @@ viewKey mt note { order, color, active } =
                 Middle ->
                     []
     in
-        if isNatural note then
-            div
+    if isNatural note then
+        div
+            (attrs mt
+                [ css
+                    [ blackWhiteStyle
+                    , keysBoderStyle
+                    , Css.width (px 24)
+                    , Css.height (px 100)
+                    , backgroundColor
+                        (Maybe.map toCssColor color
+                            |> Maybe.withDefault defaultColor
+                        )
+                    , zIndex (int 1)
+                    ]
+                , id (keyId note)
+                ]
+                keyInteractiveAttrs
+            )
+            keyInner
+
+    else
+        div
+            [ css
+                [ blackWhiteStyle
+                , Css.width zero
+                , Css.height zero
+                , zIndex (int 2)
+                ]
+            ]
+            [ div
                 (attrs mt
                     [ css
-                        [ blackWhiteStyle
+                        [ Css.width (px 16)
+                        , Css.height (px 70)
+                        , position relative
+                        , left (px -10)
+                        , backgroundColor
+                            (Maybe.map toCssColor color
+                                |> Maybe.withDefault defaultColor
+                            )
                         , keysBoderStyle
-                        , Css.width (px 24)
-                        , Css.height (px 100)
-                        , backgroundColor (Maybe.map toCssColor color
-                            |> Maybe.withDefault defaultColor)
-                        , zIndex (int 1)
                         ]
                     , id (keyId note)
                     ]
                     keyInteractiveAttrs
                 )
                 keyInner
-        else
-            div
-                [ css
-                    [ blackWhiteStyle
-                    , Css.width zero
-                    , Css.height zero
-                    , zIndex (int 2)
-                    ]
-                ]
-                [ div
-                    (attrs mt
-                        [ css
-                            [ Css.width (px 16)
-                            , Css.height (px 70)
-                            , position relative
-                            , left (px (-10))
-                            , backgroundColor (Maybe.map toCssColor color
-                                |> Maybe.withDefault defaultColor)
-                            , keysBoderStyle
-                            ]
-                        , id (keyId note)
-                        ]
-                        keyInteractiveAttrs
-                    )
-                    keyInner
-                ]
+            ]
 
 
 toCssColor : KeyColor -> Color
 toCssColor color =
     rgba color.red color.green color.blue color.alpha
+
 
 
 -- Note helpers
@@ -1013,7 +1046,8 @@ noteName note =
         alteration =
             if isNatural note then
                 ""
+
             else
                 "#"
     in
-        noteName_ ++ alteration ++ String.fromInt (octave note)
+    noteName_ ++ alteration ++ String.fromInt (octave note)

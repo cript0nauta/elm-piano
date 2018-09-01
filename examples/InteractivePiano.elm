@@ -1,13 +1,13 @@
-port module InteractivePiano exposing (..)
+port module InteractivePiano exposing (Model, Msg(..), init, main, midiJSLoaded, noteOff, noteOn, subscriptions, update, view)
 
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Maybe exposing (Maybe(..), withDefault)
-import Set
-import PlayerController
 import Piano
+import PlayerController
+import Set
 import Utils exposing (debugNotes, sizeSelector)
 
 
@@ -62,7 +62,8 @@ update msg model =
     case msg of
         MidiJSLoaded ->
             ( { model | midiJSLoaded = True }
-            , Cmd.none )
+            , Cmd.none
+            )
 
         PianoEvent pianoMsg ->
             let
@@ -81,11 +82,13 @@ update msg model =
                         |> Set.toList
                         |> List.map noteOff
             in
-                ( { model | pianoState = pianoState }
-                , Cmd.batch
-                    (Cmd.map PianoEvent pianoCmd ::
-                        noteOnCmds ++ noteOffCmds)
+            ( { model | pianoState = pianoState }
+            , Cmd.batch
+                (Cmd.map PianoEvent pianoCmd
+                    :: noteOnCmds
+                    ++ noteOffCmds
                 )
+            )
 
         ChangePianoSize size ->
             ( { model | pianoSize = size }
@@ -115,18 +118,19 @@ view model =
         pianoConfig =
             Piano.makeConfig model.pianoSize
     in
-        if model.midiJSLoaded then
-            { title = "Interactive Piano"
-            , body =
-                [ Piano.viewInteractive
-                    pianoConfig
-                    model.pianoState
-                    |> Html.map PianoEvent
-                , debugNotes model.pianoState
-                , sizeSelector ChangePianoSize
-                ]
-            }
-        else
-            { title = "Loading..."
-            , body = [ text "MIDI.js not loaded" ]
-            }
+    if model.midiJSLoaded then
+        { title = "Interactive Piano"
+        , body =
+            [ Piano.viewInteractive
+                pianoConfig
+                model.pianoState
+                |> Html.map PianoEvent
+            , debugNotes model.pianoState
+            , sizeSelector ChangePianoSize
+            ]
+        }
+
+    else
+        { title = "Loading..."
+        , body = [ text "MIDI.js not loaded" ]
+        }

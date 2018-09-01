@@ -1,4 +1,4 @@
-module PlayerController exposing (..)
+module PlayerController exposing (Model, Msg(..), PlayerStatus(..), initialModel, main, playPause, update, view)
 
 import Browser
 import Html exposing (..)
@@ -70,7 +70,7 @@ update msg model =
                         other ->
                             other
             in
-                { model | status = newStatus }
+            { model | status = newStatus }
 
 
 

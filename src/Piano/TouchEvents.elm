@@ -1,4 +1,4 @@
-module Piano.TouchEvents exposing (..)
+module Piano.TouchEvents exposing (ElementData, Touch, TouchEvent, collection, combine, eventDecoder, fromResult, impureCollection, onTouchEnd, onTouchMove, onTouchStart, touchDecoder)
 
 {-| Module used to detect which key was affected by some touch event
 
@@ -12,9 +12,9 @@ I based on this stack overflow question to write the module:
 -}
 
 import Array exposing (Array)
-import Json.Decode as Json exposing (..)
 import Html.Styled
 import Html.Styled.Events exposing (preventDefaultOn)
+import Json.Decode as Json exposing (..)
 
 
 type alias TouchEvent =
@@ -22,6 +22,7 @@ type alias TouchEvent =
 
     -- I only need the changedTouches property
     , touches : List Touch
+
     -- , keys : List ElementData
     }
 
@@ -46,20 +47,23 @@ eventDecoder =
     Json.map2 TouchEvent
         (field "type" string)
         (field "changedTouches" (collection touchDecoder))
-        -- (at [ "target", "attributes", "data-note", "value" ] string
-        --     |> map String.toInt
-        --     |> andThen fromResult
-        --     |> andThen
-        --         (\note ->
-        --             at
-        --                 (if isNatural note then
-        --                     [ "target", "parentNode", "childNodes" ]
-        --                  else
-        --                     [ "target", "parentNode", "parentNode", "childNodes" ]
-        --                 )
-        --                 (collection elementDecoder)
-        --         )
-        -- )
+
+
+
+-- (at [ "target", "attributes", "data-note", "value" ] string
+--     |> map String.toInt
+--     |> andThen fromResult
+--     |> andThen
+--         (\note ->
+--             at
+--                 (if isNatural note then
+--                     [ "target", "parentNode", "childNodes" ]
+--                  else
+--                     [ "target", "parentNode", "parentNode", "childNodes" ]
+--                 )
+--                 (collection elementDecoder)
+--         )
+-- )
 
 
 touchDecoder : Decoder Touch
@@ -73,6 +77,7 @@ touchDecoder =
         )
 
 
+
 -- debugDecoderErrors : Decoder a -> Decoder a
 -- debugDecoderErrors d =
 --     let
@@ -81,15 +86,12 @@ touchDecoder =
 --             case r of
 --                 Result.Err m ->
 --                     fail (Debug.log "error decoding" m)
-
 --                 Ok a ->
 --                     succeed (Debug.log "decoded" a)
 --     in
 --         value
 --             |> map (decodeValue d)
 --             |> andThen fromResult_
-
-
 -- elementDecoder : Decoder ElementData
 -- elementDecoder =
 --     oneOf
@@ -151,21 +153,22 @@ onTouchStart : (TouchEvent -> msg) -> Html.Styled.Attribute msg
 onTouchStart msg =
     preventDefaultOn
         "touchstart"
-        (Json.map (\e -> (msg e, True)) eventDecoder)
+        (Json.map (\e -> ( msg e, True )) eventDecoder)
 
 
 onTouchMove : (TouchEvent -> msg) -> Html.Styled.Attribute msg
 onTouchMove msg =
     preventDefaultOn
         "touchmove"
-        (Json.map (\e -> (msg e, True)) eventDecoder)
+        (Json.map (\e -> ( msg e, True )) eventDecoder)
 
 
 onTouchEnd : (TouchEvent -> msg) -> Html.Styled.Attribute msg
 onTouchEnd msg =
     preventDefaultOn
         "touchend"
-        (Json.map (\e -> (msg e, True)) eventDecoder)
+        (Json.map (\e -> ( msg e, True )) eventDecoder)
+
 
 
 -- fromCoordinates : TouchEvent -> ( Int, Int ) -> Maybe Int
@@ -192,6 +195,7 @@ collection decoder =
                     |> List.map (\index -> field (String.fromInt index) decoder)
                     |> combine
             )
+
 
 combine : List (Decoder a) -> Decoder (List a)
 combine =

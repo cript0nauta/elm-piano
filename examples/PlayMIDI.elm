@@ -1,4 +1,4 @@
-port module PlayMIDI exposing (..)
+port module PlayMIDI exposing (Model, Msg(..), colorWheelKeys, init, loadMIDI, main, midiFileLoaded, midiJSLoaded, midiLoadFailed, noteOff, noteOn, pause, resume, setPianoColors, stop, subscriptions, update, view, viewHtml)
 
 import Browser exposing (Document)
 import Color
@@ -7,9 +7,9 @@ import Html as Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Maybe exposing (Maybe(..), withDefault)
-import Set
-import PlayerController
 import Piano
+import PlayerController
+import Set
 
 
 main : Program () Model Msg
@@ -44,13 +44,13 @@ init _ =
             { midiUrl = ""
             , midiJSLoaded = False
             , midiFileLoaded = False
-            , midiError = (Just "Not loaded")
+            , midiError = Just "Not loaded"
             , colored = True
             , playerInfo = PlayerController.initialModel
             , notes = Set.empty
             }
     in
-        ( model, Cmd.none )
+    ( model, Cmd.none )
 
 
 {-| Given a list of keys, color them to make them look like a color wheel.
@@ -63,17 +63,17 @@ colorWheelKeys saturation lightness l =
         setColor max i note =
             let
                 hue =
-                    (pi * 2 * toFloat i / toFloat max)
+                    pi * 2 * toFloat i / toFloat max
 
                 color =
                     Color.hsl hue saturation lightness
-                    |> Color.toRgb
+                        |> Color.toRgb
             in
-                ( note, color )
+            ( note, color )
     in
-        l
-            |> List.indexedMap (setColor (List.length l))
-            |> Dict.fromList
+    l
+        |> List.indexedMap (setColor (List.length l))
+        |> Dict.fromList
 
 
 setPianoColors : Bool -> Piano.Config -> Piano.Config
@@ -98,12 +98,13 @@ setPianoColors colored config =
         --         |> colorWheelKeys 0.2 0.4
         --     )
     in
-        if colored then
-            config
-                |> Piano.colorPressedKeys pressedKeysDict
-                |> Piano.colorUnpressedKeys unpressedKeysDict
-        else
-            config
+    if colored then
+        config
+            |> Piano.colorPressedKeys pressedKeysDict
+            |> Piano.colorUnpressedKeys unpressedKeysDict
+
+    else
+        config
 
 
 
@@ -172,15 +173,17 @@ update msg model =
                         PlayerController.Stopped ->
                             stop ()
             in
-                ( { model | playerInfo = playerModel }, cmd )
+            ( { model | playerInfo = playerModel }, cmd )
 
         NoteOn note ->
             ( { model | notes = Set.insert note model.notes }
-            , Cmd.none )
+            , Cmd.none
+            )
 
         NoteOff note ->
             ( { model | notes = Set.remove note model.notes }
-            , Cmd.none )
+            , Cmd.none
+            )
 
         ToggleColored ->
             ( { model
@@ -235,6 +238,7 @@ viewHtml model =
                 [ text
                     ((if model.colored then
                         "Disable"
+
                       else
                         "Enable"
                      )
@@ -245,14 +249,16 @@ viewHtml model =
                 [ text
                     (if model.midiFileLoaded then
                         "Loaded"
+
                      else
                         "Not loaded"
                     )
                 ]
-            , div [] [ text ("Errors: " ++ (withDefault "No Errors" model.midiError)) ]
+            , div [] [ text ("Errors: " ++ withDefault "No Errors" model.midiError) ]
             , div []
                 (if model.midiFileLoaded then
                     [ Html.map ChangePlayerStatus <| PlayerController.view model.playerInfo ]
+
                  else
                     []
                 )
@@ -263,6 +269,7 @@ viewHtml model =
                 model.notes
                 |> Html.map never
             ]
+
     else
         div [] [ text "MIDI.js not loaded" ]
 
@@ -270,4 +277,5 @@ viewHtml model =
 view : Model -> Document Msg
 view model =
     { title = "Play MIDI"
-    , body = [viewHtml model] }
+    , body = [ viewHtml model ]
+    }

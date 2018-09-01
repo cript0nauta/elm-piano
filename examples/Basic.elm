@@ -1,9 +1,9 @@
-module Basic exposing (..)
+module Basic exposing (main, notes)
 
-import Html exposing (..)
 import Color
-import Set
+import Html exposing (..)
 import Piano
+import Set
 
 
 notes : Set.Set Piano.Note
@@ -37,4 +37,4 @@ main =
             Piano.makeConfig Piano.keyboard88Keys
                 |> Piano.colorAllPressedKeys Color.lightOrange Color.darkOrange
     in
-        Piano.viewStatic pianoConfig notes
+    Piano.viewStatic pianoConfig notes
