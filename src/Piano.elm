@@ -1,16 +1,19 @@
 module Piano exposing
-    ( view
+    ( viewStatic
+    , viewInteractive
     , State
     , initialState
     , Note
     , getNotes
     , Config
+    , makeConfig
     , Msg
     , update
     , CurrentNotes
     , activeNotes
     , newNotes
     , releasedNotes
+    , KeyColor
     , colorAllUnpressedKeys
     , colorAllPressedKeys
     , colorUnpressedKeys
@@ -25,7 +28,6 @@ module Piano exposing
     , keyboard61Keys
     , keyboard76Keys
     , keyboard88Keys
-    , KeyColor, makeConfig, viewInteractive, viewStatic
     )
 
 {-| A reusable piano view
@@ -33,7 +35,8 @@ module Piano exposing
 
 # View
 
-@docs view
+@docs viewStatic
+@docs viewInteractive
 
 
 # State
@@ -42,15 +45,12 @@ module Piano exposing
 @docs initialState
 @docs Note
 @docs getNotes
-@docs setNotes
-@docs updateNotes
 
 
 # Configuration
 
 @docs Config
-@docs config
-@docs interactive
+@docs makeConfig
 
 
 # Interactive mode functions and types
@@ -68,6 +68,7 @@ the user to select the notes by clicking on the piano keys.
 
 # Customizations
 
+@docs KeyColor
 @docs colorAllUnpressedKeys
 @docs colorAllPressedKeys
 @docs colorUnpressedKeys
@@ -118,7 +119,7 @@ import Task exposing (Task)
 
 {-| Represents a note giving its MIDI Note Number
 
-See [http://www.electronics.dit.ie/staff/tscarff/Music\_technology/midi/midi\_note\_numbers\_for\_octaves.htm](http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note_numbers_for_octaves.htm) for more information
+See [[[[http://www.electronics.dit.ie/staff/tscarff/Music\_technology/midi/midi\_note\_numbers\_for\_octaves.htm](http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note_numbers_for_octaves.htm)](http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note_numbers_for_octaves.htm)](http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note_numbers_for_octaves.htm)](http://www.electronics.dit.ie/staff/tscarff/Music_technology/midi/midi_note_numbers_for_octaves.htm) for more information
 
 -}
 type alias Note =
@@ -142,6 +143,8 @@ type Config
     = Config ConfigInternal
 
 
+{-| A record representing the color of a Piano key
+-}
 type alias KeyColor =
     { red : Int
     , green : Int
@@ -751,6 +754,9 @@ viewInteractive (Config config) (State state) =
     view withMessages config (notes state)
 
 
+{-| Render a non-interactive piano. Use this when you wan't to show
+something instead of wanting the user to click on the keys
+-}
 viewStatic : Config -> Set Note -> Html.Html Never
 viewStatic (Config config) desiredNotes =
     view
