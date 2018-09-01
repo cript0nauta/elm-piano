@@ -56,10 +56,10 @@ init _ =
 {-| Given a list of keys, color them to make them look like a color wheel.
 Returns a dict compatible with the Piano input
 -}
-colorWheelKeys : Float -> Float -> List Piano.Note -> Dict.Dict Piano.Note Color.Color
+colorWheelKeys : Float -> Float -> List Piano.Note -> Dict.Dict Piano.Note Piano.KeyColor
 colorWheelKeys saturation lightness l =
     let
-        setColor : Int -> Int -> Piano.Note -> ( Piano.Note, Color.Color )
+        setColor : Int -> Int -> Piano.Note -> ( Piano.Note, Piano.KeyColor )
         setColor max i note =
             let
                 hue =
@@ -67,6 +67,7 @@ colorWheelKeys saturation lightness l =
 
                 color =
                     Color.hsl hue saturation lightness
+                    |> Color.toRgb
             in
                 ( note, color )
     in

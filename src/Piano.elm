@@ -6,6 +6,7 @@ module Piano
         , makeConfig
         , State
         , CurrentNotes
+        , KeyColor
         , activeNotes
         , newNotes
         , releasedNotes
@@ -99,7 +100,6 @@ the user to select the notes by clicking on the piano keys.
 
 import Browser.Dom
 import Css exposing (..)
-import Color
 import Dict exposing (Dict)
 import Json.Decode
 import Html
@@ -146,10 +146,18 @@ type Config
     = Config ConfigInternal
 
 
+type alias KeyColor =
+    { red : Int
+    , green : Int
+    , blue : Int
+    , alpha : Float
+    }
+
+
 type alias ConfigInternal =
     { noteRange : ( Note, Note )
-    , pressedKeyColors : Dict Note Color.Color
-    , unpressedKeyColors : Dict Note Color.Color
+    , pressedKeyColors : Dict Note KeyColor
+    , unpressedKeyColors : Dict Note KeyColor
     }
 
 
@@ -279,7 +287,7 @@ updateNotes f (State state) =
     Debug.todo "not implemented"
 
 
-colorKeys : Color.Color -> Color.Color -> Dict Note Color.Color
+colorKeys : KeyColor -> KeyColor -> Dict Note KeyColor
 colorKeys white black =
     allNotes
         |> List.map
@@ -297,7 +305,7 @@ colorKeys white black =
 {-| Does the same that colorAllUnpressedKeys, but sets the color of the
 pressed keys instead
 -}
-colorAllPressedKeys : Color.Color -> Color.Color -> Config -> Config
+colorAllPressedKeys : KeyColor -> KeyColor -> Config -> Config
 colorAllPressedKeys white black (Config config) =
     Config { config | pressedKeyColors = colorKeys white black }
 
@@ -313,14 +321,14 @@ that order.
             |> Piano.colorAllUnpressedKeys Color.lightOrange Color.darkOrange
 
 -}
-colorAllUnpressedKeys : Color.Color -> Color.Color -> Config -> Config
+colorAllUnpressedKeys : KeyColor -> KeyColor -> Config -> Config
 colorAllUnpressedKeys white black (Config config) =
     Config { config | unpressedKeyColors = colorKeys white black }
 
 
 {-| Same as `colorUnpressedKeys` but changes the color of pressed keys instead.
 -}
-colorPressedKeys : Dict Note Color.Color -> Config -> Config
+colorPressedKeys : Dict Note KeyColor -> Config -> Config
 colorPressedKeys d (Config config) =
     Config { config | pressedKeyColors = d }
 
@@ -331,7 +339,7 @@ Use it when the two functions above don't satisfy your needs (you probably
 want to use different colors for each note)
 
 -}
-colorUnpressedKeys : Dict Note Color.Color -> Config -> Config
+colorUnpressedKeys : Dict Note KeyColor -> Config -> Config
 colorUnpressedKeys d (Config config) =
     Config { config | unpressedKeyColors = d }
 
@@ -803,15 +811,6 @@ view mt config pressedNotes =
 
         range =
             List.range (Tuple.first config.noteRange) (Tuple.second config.noteRange)
-
-        -- Convert from a native Color to a elm-css Color
-        nativeColorToCss : Color.Color -> Color
-        nativeColorToCss c =
-            let
-                { red, green, blue, alpha } =
-                    Color.toRgb c
-            in
-                rgba red green blue alpha
     in
         span [ style "text-align" "center" ]
             ([ container <|
@@ -840,8 +839,7 @@ view mt config pressedNotes =
                                 mt
                                 note
                                 { active = active
-                                , color = (Dict.get note colorDict
-                                    |> Maybe.map nativeColorToCss)
+                                , color = Dict.get note colorDict
                                 , order = keyOrder
                                 }
                     )
@@ -859,7 +857,7 @@ type KeyOrder
 
 type alias KeyProperties =
     { active : Bool
-    , color : Maybe Color
+    , color : Maybe KeyColor
     , order : KeyOrder
     }
 
@@ -942,9 +940,8 @@ viewKey mt note { order, color, active } =
                         , keysBoderStyle
                         , Css.width (px 24)
                         , Css.height (px 100)
-                        , color
-                            |> Maybe.withDefault defaultColor
-                            |> backgroundColor
+                        , backgroundColor (Maybe.map toCssColor color
+                            |> Maybe.withDefault defaultColor)
                         , zIndex (int 1)
                         ]
                     , id (keyId note)
@@ -968,9 +965,8 @@ viewKey mt note { order, color, active } =
                             , Css.height (px 70)
                             , position relative
                             , left (px (-10))
-                            , color
-                                |> Maybe.withDefault defaultColor
-                                |> backgroundColor
+                            , backgroundColor (Maybe.map toCssColor color
+                                |> Maybe.withDefault defaultColor)
                             , keysBoderStyle
                             ]
                         , id (keyId note)
@@ -979,6 +975,11 @@ viewKey mt note { order, color, active } =
                     )
                     keyInner
                 ]
+
+
+toCssColor : KeyColor -> Color
+toCssColor color =
+    rgba color.red color.green color.blue color.alpha
 
 
 -- Note helpers
