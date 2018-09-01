@@ -1,4 +1,4 @@
-module Piano.PianoStyle exposing (..)
+module Piano.PianoStyle exposing (css)
 
 {-|
 Exposes a single string with the correct CSS styles for the component.
