@@ -7,12 +7,14 @@ module Piano exposing
     , State
     , initialState
     , getNotes
+    , isTouchReady
     , Msg
     , update
     , CurrentNotes
     , activeNotes
     , newNotes
     , releasedNotes
+    , getKeyPositions
     , KeyColor
     , colorAllUnpressedKeys
     , colorAllPressedKeys
@@ -58,12 +60,14 @@ module Piano exposing
 Ignore this section if only want to display some notes rather than letting
 the user to select the notes by clicking on the piano keys.
 
+@docs isTouchReady
 @docs Msg
 @docs update
 @docs CurrentNotes
 @docs activeNotes
 @docs newNotes
 @docs releasedNotes
+@docs getKeyPositions
 
 
 # Customizations
@@ -514,6 +518,22 @@ getBoundsPosition =
         (getPositionOf "elm-piano-last-key")
 
 
+{-| Used to get the position of the piano keys and detect if its
+location has changed. Having the right positions if required
+to make multi-touch events work properly.
+
+This command is automatically invoked on the touchstart events,
+but it is recommended to manually use it when you render the
+piano view for the first time or when you know the positions
+might have changed, like for example when you change the
+keyboard size.
+
+-}
+getKeyPositions : Cmd Msg
+getKeyPositions =
+    Task.perform SetBoundsPosition getBoundsPosition
+
+
 noCmd : StateInternal -> ( StateInternal, Cmd Msg )
 noCmd state =
     ( state, Cmd.none )
@@ -583,7 +603,7 @@ updateInternal msg state =
                         |> Dict.fromList
             in
             ( { state | touches = Dict.union newTouches state.touches }
-            , Task.perform SetBoundsPosition getBoundsPosition
+            , getKeyPositions
             )
 
         TouchEnd { touches } ->
@@ -693,6 +713,21 @@ find predicate l =
 
             else
                 find predicate xs
+
+
+{-| For touch events to work properly, it is necessary to get
+the positions of each key. This can take a few seconds on some
+devices, so use this function to know when touch events will
+be handled right.
+-}
+isTouchReady : State -> Bool
+isTouchReady (State state) =
+    case state.keyCoordinates of
+        FetchedAll _ _ ->
+            True
+
+        _ ->
+            False
 
 
 

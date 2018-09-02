@@ -62,7 +62,7 @@ update msg model =
     case msg of
         MidiJSLoaded ->
             ( { model | midiJSLoaded = True }
-            , Cmd.none
+            , Cmd.map PianoEvent Piano.getKeyPositions
             )
 
         PianoEvent pianoMsg ->
@@ -92,7 +92,7 @@ update msg model =
 
         ChangePianoSize size ->
             ( { model | pianoSize = size }
-            , Cmd.none
+            , Cmd.map PianoEvent Piano.getKeyPositions
             )
 
 
@@ -125,7 +125,13 @@ view model =
                 pianoConfig
                 model.pianoState
                 |> Html.map PianoEvent
-            , debugNotes model.pianoState
+            , if Piano.isTouchReady model.pianoState then
+                debugNotes model.pianoState
+
+              else
+                div
+                    [ style "text-align" "center" ]
+                    [ text "Preparing multi-touch support..." ]
             , sizeSelector ChangePianoSize
             ]
         }
