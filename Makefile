@@ -19,10 +19,10 @@ examples/basic.html: examples/Basic.elm $(MODULE_FILES)
 	cd examples && elm make $(OPTS) Basic.elm --output basic.html
 
 documentation.json: $(MODULE_FILES)
-	elm make --docs=documentation.json --output=/dev/null src/Piano.elm
+	elm make $(OPTS) --docs=documentation.json --output=/dev/null src/Piano.elm
 
 src/Piano.elm:
-	elm make --output=/dev/null src/Piano.elm
+	elm make $(OPTS) --output=/dev/null src/Piano.elm
 
 clean:
 	rm -rf documentation.json elm-stuff/
