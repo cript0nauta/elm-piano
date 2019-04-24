@@ -9,7 +9,7 @@ docs: documentation.json
 
 examples: $(EXAMPLES)
 
-examples/PlayMIDI.js: examples/PlayMIDI.elm $(MODULE_FILES)
+examples/PlayMIDI.js: examples/PlayMIDI.elm examples/PlayerController.elm $(MODULE_FILES)
 	cd examples && elm make $(OPTS) PlayMIDI.elm --output PlayMIDI.js
 
 examples/InteractivePiano.js: examples/InteractivePiano.elm examples/Utils.elm $(MODULE_FILES)

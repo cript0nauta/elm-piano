@@ -1,4 +1,13 @@
-module PlayerController exposing (Model, Msg(..), PlayerStatus(..), initialModel, main, playPause, update, view)
+module PlayerController exposing
+    ( Model
+    , Msg(..)
+    , PlayerStatus(..)
+    , initialModel
+    , main
+    , playPause
+    , update
+    , view
+    )
 
 import Browser
 import Html exposing (..)
@@ -25,7 +34,7 @@ type alias Model =
 
 initialModel : Model
 initialModel =
-    Model Stopped
+    Model Playing
 
 
 type PlayerStatus

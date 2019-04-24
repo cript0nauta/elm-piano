@@ -1,4 +1,4 @@
-port module PlayMIDI exposing (Model, Msg(..), colorWheelKeys, init, loadMIDI, main, midiFileLoaded, midiJSLoaded, midiLoadFailed, noteOff, noteOn, pause, resume, setPianoColors, stop, subscriptions, update, view, viewHtml)
+port module PlayMIDI exposing (main)
 
 import Browser exposing (Document)
 import Color
@@ -27,10 +27,7 @@ main =
 
 
 type alias Model =
-    { midiUrl : String
-    , midiJSLoaded : Bool
-    , midiFileLoaded : Bool
-    , midiError : Maybe String
+    { midiJSLoaded : Bool
     , playerInfo : PlayerController.Model
     , notes : Set.Set Piano.Note
     , colored : Bool
@@ -41,10 +38,7 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     let
         model =
-            { midiUrl = ""
-            , midiJSLoaded = False
-            , midiFileLoaded = False
-            , midiError = Just "Not loaded"
+            { midiJSLoaded = False
             , colored = True
             , playerInfo = PlayerController.initialModel
             , notes = Set.empty
@@ -82,7 +76,6 @@ setPianoColors colored config =
         pressedKeysDict =
             -- Color all pressed notes with higher saturation colors
             Piano.allNotes
-                -- |> List.filter Piano.isNatural
                 |> colorWheelKeys 1 0.8
 
         unpressedKeysDict =
@@ -90,13 +83,6 @@ setPianoColors colored config =
             Piano.allNotes
                 |> List.filter Piano.isNatural
                 |> colorWheelKeys 0.3 0.5
-
-        -- |> Dict.union
-        --     -- Color black keys
-        --     (Piano.allNotes
-        --         |> List.filter (not << Piano.isNatural)
-        --         |> colorWheelKeys 0.2 0.4
-        --     )
     in
     if colored then
         config
@@ -112,18 +98,11 @@ setPianoColors colored config =
 
 
 type Msg
-    = ChangeUrl String
-    | LoadMIDI
-    | LoadOK
-    | LoadFailed String
-    | MidiJSLoaded
+    = MidiJSLoaded
     | ChangePlayerStatus PlayerController.Msg
     | NoteOn Int
     | NoteOff Int
     | ToggleColored
-
-
-port loadMIDI : String -> Cmd msg
 
 
 port resume : () -> Cmd msg
@@ -138,23 +117,9 @@ port stop : () -> Cmd msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ChangeUrl url ->
-            ( { model | midiUrl = url }, Cmd.none )
-
-        LoadMIDI ->
-            ( { model | midiFileLoaded = False, midiError = Nothing }, loadMIDI model.midiUrl )
-
-        LoadOK ->
-            -- ({model | midiFileLoaded=True}, Cmd.none)
-            ( { model | midiFileLoaded = True }, resume () )
-
-        LoadFailed err ->
-            ( { model | midiFileLoaded = False, midiError = Just err }, Cmd.none )
-
         MidiJSLoaded ->
-            -- ({model | midiJSLoaded=True}, Cmd.none)
             ( { model | midiJSLoaded = True }
-            , loadMIDI "midis/cabeza.mid"
+            , resume ()
             )
 
         ChangePlayerStatus playerMsg ->
@@ -197,13 +162,7 @@ update msg model =
 -- SUBSCRIPTIONS
 
 
-port midiFileLoaded : (() -> msg) -> Sub msg
-
-
 port midiJSLoaded : (() -> msg) -> Sub msg
-
-
-port midiLoadFailed : (String -> msg) -> Sub msg
 
 
 port noteOn : (Int -> msg) -> Sub msg
@@ -215,9 +174,7 @@ port noteOff : (Int -> msg) -> Sub msg
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ midiFileLoaded (\_ -> LoadOK)
-        , midiLoadFailed LoadFailed
-        , midiJSLoaded (\_ -> MidiJSLoaded)
+        [ midiJSLoaded (\_ -> MidiJSLoaded)
         , noteOn NoteOn
         , noteOff NoteOff
         ]
@@ -231,37 +188,18 @@ viewHtml : Model -> Html Msg
 viewHtml model =
     if model.midiJSLoaded then
         div []
-            [ input [ onInput ChangeUrl ] []
-            , button [ onClick LoadMIDI ] [ text "Load MIDI file" ]
-            , button
+            [ button
                 [ onClick ToggleColored ]
                 [ text
-                    ((if model.colored then
-                        "Disable"
-
-                      else
-                        "Enable"
-                     )
-                        ++ " colored keyboard"
-                    )
-                ]
-            , div []
-                [ text
-                    (if model.midiFileLoaded then
-                        "Loaded"
+                    (if model.colored then
+                        "Disable colored keyboard"
 
                      else
-                        "Not loaded"
+                        "Enable colored keyboard"
                     )
                 ]
-            , div [] [ text ("Errors: " ++ withDefault "No Errors" model.midiError) ]
-            , div []
-                (if model.midiFileLoaded then
-                    [ Html.map ChangePlayerStatus <| PlayerController.view model.playerInfo ]
-
-                 else
-                    []
-                )
+            , Html.map ChangePlayerStatus <|
+                PlayerController.view model.playerInfo
             , Piano.viewStatic
                 (Piano.makeConfig Piano.keyboard88Keys
                     |> setPianoColors model.colored
@@ -271,7 +209,7 @@ viewHtml model =
             ]
 
     else
-        div [] [ text "MIDI.js not loaded" ]
+        div [] [ text "Waiting for MIDI.js to load..." ]
 
 
 view : Model -> Document Msg

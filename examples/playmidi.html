@@ -31,20 +31,17 @@
         onsuccess: function() { console.log('load success') },
         soundfontUrl: "bower_components/midi/examples/soundfont/",
         onsuccess: function(){
-            app.ports.loadMIDI.subscribe(function(url){
-                MIDI.Player.loadFile(
-                        url,
-                        function(){
-                            app.ports.midiFileLoaded.send(null);
-                            // MIDI.Player.start();
-                        },
-                        function(){},
-                        function(e){
-                            app.ports.midiLoadFailed.send(e);
-                        }
-                    );
-            });
-            app.ports.midiJSLoaded.send(null);
+            MIDI.Player.loadFile(
+                    "midis/cabeza.mid",
+                    function(){
+                        app.ports.midiJSLoaded.send(null);
+                        // MIDI.Player.start();
+                    },
+                    function(){},
+                    function(e){
+                        console.log("Error loading MIDI file!");
+                    }
+                );
             app.ports.resume.subscribe(MIDI.Player.resume);
             app.ports.pause.subscribe(MIDI.Player.pause);
             app.ports.stop.subscribe(MIDI.Player.stop);
