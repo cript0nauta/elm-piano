@@ -33,10 +33,10 @@ type alias Model =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model
-        False
-        Piano.initialState
-        Piano.keyboard25Keys
+    ( { midiJSLoaded = False
+      , pianoState = Piano.initialState
+      , pianoSize = Piano.keyboard25Keys
+      }
     , Cmd.none
     )
 
@@ -114,15 +114,11 @@ subscriptions model =
 
 view : Model -> Browser.Document Msg
 view model =
-    let
-        pianoConfig =
-            Piano.makeConfig model.pianoSize
-    in
     if model.midiJSLoaded then
         { title = "Interactive Piano"
         , body =
             [ Piano.viewInteractive
-                pianoConfig
+                (Piano.makeConfig model.pianoSize)
                 model.pianoState
                 |> Html.map PianoEvent
             , if Piano.isTouchReady model.pianoState then
@@ -138,5 +134,5 @@ view model =
 
     else
         { title = "Loading..."
-        , body = [ text "MIDI.js not loaded" ]
+        , body = [ text "Waiting for MIDI.js to load..." ]
         }
