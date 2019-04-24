@@ -11,12 +11,12 @@ sizeSelector : (( Note, Note ) -> msg) -> Html msg
 sizeSelector msg =
     let
         keyboardSizeOption size =
-            let
-                keys =
-                    Tuple.second size - Tuple.first size + 1
-            in
             button [ onClick (msg size) ]
-                [ text (String.fromInt keys ++ "-key piano") ]
+                [ text (String.fromInt (numberOfNotes size) ++ "-key piano") ]
+
+        numberOfNotes : ( Note, Note ) -> Int
+        numberOfNotes ( first, second ) =
+            second - first + 1
     in
     List.map keyboardSizeOption
         [ keyboard12Keys

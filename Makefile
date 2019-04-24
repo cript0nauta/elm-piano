@@ -12,7 +12,7 @@ examples: $(EXAMPLES)
 examples/PlayMIDI.js: examples/PlayMIDI.elm $(MODULE_FILES)
 	cd examples && elm make $(OPTS) PlayMIDI.elm --output PlayMIDI.js
 
-examples/InteractivePiano.js: examples/InteractivePiano.elm $(MODULE_FILES)
+examples/InteractivePiano.js: examples/InteractivePiano.elm examples/Utils.elm $(MODULE_FILES)
 	cd examples && elm make $(OPTS) InteractivePiano.elm --output InteractivePiano.js
 
 examples/basic.html: examples/Basic.elm $(MODULE_FILES)
